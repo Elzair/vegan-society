@@ -1,0 +1,26 @@
+{
+  "name": "vegan-society",
+  "version": "0.0.1",
+  "description": "Web App to grow the Vegan community",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.com/Elzair/vegan-society.git"
+  },
+  "keywords": [
+    "vegan",
+    "koa",
+    "gulp",
+    "websockets",
+    "webapp"
+  ],
+  "author": "Philip Woods",
+  "license": "Affero GPLv3",
+  "bugs": {
+    "url": "https://github.com/Elzair/vegan-society/issues"
+  },
+  "homepage": "https://github.com/Elzair/vegan-society"
+}
