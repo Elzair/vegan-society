@@ -14,8 +14,8 @@ var app = koa();
 
 // middleware
 app.use(logger());
-app.use(stylus('./public'));
-app.use(serve('./public'));
+app.use(stylus(__dirname + '/public/stylesheets'));
+app.use(serve(__dirname + '/public'));
 
 // Route middleware
 app.use(route.get('/', main.main));
