@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <title>{% block title %}Vegan Society{% endblock %}</title>
+  <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
+  <link rel="stylesheet" href="/stylesheets/app.css">
+  <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
 </head>
 <body>
-  <section id="content">
-    {% block content %}
-    {% endblock %}
-  </section>
+  {% block content %}
+  {% endblock %}
+  <script type="text/javascript" src="/scripts/app.js"></script>
 </body>
 </html>
