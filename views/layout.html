@@ -1,18 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-app="mapApp">
 <head>
   <meta charset="UTF-8">
   <title>{% block title %}Vegan Society{% endblock %}</title>
   <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
   <link rel="stylesheet" href="/stylesheets/app.css">
-</head>
-<body>
-  {% block content %}
-  {% endblock %}
   <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
   <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>
   <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular-resource.min.js"></script>
   <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular-route.min.js"></script>
+  <script type="text/javascript" src="/scripts/interpolate.js"></script>
+  <script type="text/javascript" src="/scripts/controllers.js"></script>
   <script type="text/javascript" src="/scripts/app.js"></script>
+</head>
+<body>
+  {% block content %}
+  {% endblock %}
 </body>
 </html>
