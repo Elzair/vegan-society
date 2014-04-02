@@ -15,4 +15,4 @@ npm-debug.log
 node_modules
 conf/db.json
 *.css
-tools/vegguide-crawler/places.json
+tools/vegguide-crawler/locations.json
