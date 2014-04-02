@@ -16,5 +16,10 @@
     "http"
   ],
   "author": "Philip Woods",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "co-request": "~0.2.0",
+    "co": "~3.0.5",
+    "request": "~2.34.0"
+  }
 }
