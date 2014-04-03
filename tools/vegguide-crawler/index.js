@@ -90,8 +90,8 @@ co(function* () {
   // Write first '[' to file
   yield fs.writeFile(__dirname + '/output/locations.json', '[');
 
-  var separator = '\n', idnum = 1;
-  for (var i=1; i<10; i++) {
+  var separator = '', idnum = 1;
+  for (var i=1; i<3000; i++) {
     console.log('Now fetching entries for region ' + i.toString());
     var results = yield request.get({url: 'http://www.vegguide.org/region/'+i.toString(), 
       headers: {'Accept': 'application/json'}});
@@ -122,14 +122,14 @@ co(function* () {
         }
       }
 
-      var output = JSON.stringify(locations, null, 2);
-      // Strip first "[\n" and last "\n]" from output
-      output = separator + output.substring(2, output.length-2);
-      separator = ',\n';
+      var output = util.format('%j', locations);
+      // Strip first "[" and last "]" from output
+      output = separator + output.substring(1, output.length-1);
+      separator = ',';
       yield fs.appendFile(__dirname + '/output/locations.json', output);
     }
   }
 
   // Write last ']' to file
-  yield fs.appendFile(__dirname + '/output/locations.json', '\n]');
+  yield fs.appendFile(__dirname + '/output/locations.json', ']');
 })();
