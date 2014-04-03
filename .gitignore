@@ -13,6 +13,6 @@ results
 
 npm-debug.log
 node_modules
-conf/db.json
+conf/db.*.json
 *.css
 tools/vegguide-crawler/output
