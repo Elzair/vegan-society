@@ -91,7 +91,7 @@ co(function* () {
   yield fs.writeFile(__dirname + '/output/locations.json', '[');
 
   var separator = '', idnum = 1;
-  for (var i=1; i<6; i++) {
+  for (var i=1; i<3000; i++) {
     console.log('Now fetching entries for region ' + i.toString());
     var results = yield request.get({url: 'http://www.vegguide.org/region/'+i.toString(), 
       headers: {'Accept': 'application/json'}});
