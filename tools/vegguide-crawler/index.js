@@ -91,7 +91,7 @@ co(function* () {
   yield fs.writeFile(__dirname + '/output/locations.json', '[');
 
   var separator = '', idnum = 1;
-  for (var i=1; i<3000; i++) {
+  for (var i=1; i<6; i++) {
     console.log('Now fetching entries for region ' + i.toString());
     var results = yield request.get({url: 'http://www.vegguide.org/region/'+i.toString(), 
       headers: {'Accept': 'application/json'}});
@@ -111,10 +111,13 @@ co(function* () {
       // Add GPS coordinates to locations
       for (var j=0; j<locations.length; j++) {
         var l = locations[j];
+        if (l.address1 === undefined || l.city === undefined || l.region === undefined) {
+          continue;
+        }
         var qry_str = encodeURIComponent(util.format('%s %s, %s', l.address1, l.city, l.region));
-        var url = util.format('http://nominatim.openstreetmap.org/search?q=%s&format=json&polygon=1&addressdetails=1', qry_str);
+        var url = util.format('http://open.mapquestapi.com/nominatim/v1/search?q=%s&format=json', qry_str);
         console.log(url);
-        var gpsresults = yield request.get({url: url});
+        var gpsresults = yield request.get({url: url, headers: {'User-Agent': 'request'}});
         var gpsbody = JSON.parse(gpsresults.body);
         if (gpsbody.length > 0) {
           locations[j].lat = gpsbody[0].lat;
