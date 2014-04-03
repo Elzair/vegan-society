@@ -117,11 +117,10 @@ co(function* () {
         var qry_str = encodeURIComponent(util.format('%s %s, %s', l.address1, l.city, l.region));
         var url = util.format('http://open.mapquestapi.com/nominatim/v1/search?q=%s&format=json', qry_str);
         console.log(url);
-        var gpsresults = yield request.get({url: url, headers: {'User-Agent': 'request'}});
+        var gpsresults = yield request.get({url: url, headers: {'User-Agent': 'VeganSocietyCrawler'}});
         var gpsbody = JSON.parse(gpsresults.body);
         if (gpsbody.length > 0) {
-          locations[j].lat = gpsbody[0].lat;
-          locations[j].lng = gpsbody[0].lon;
+          l.coordinates = [gpsbody[0].lon, gpsbody[0].lat];
         }
       }
 
