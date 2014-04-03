@@ -120,7 +120,7 @@ co(function* () {
         var gpsresults = yield request.get({url: url, headers: {'User-Agent': 'VeganSocietyCrawler'}});
         var gpsbody = JSON.parse(gpsresults.body);
         if (gpsbody.length > 0) {
-          l.coordinates = [gpsbody[0].lon, gpsbody[0].lat];
+          l.coordinates = [parseFloat(gpsbody[0].lon, 10), parseFloat(gpsbody[0].lat, 10)];
         }
       }
 
