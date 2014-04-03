@@ -1,6 +1,5 @@
 {
   "undef": true,
-  "unused": true,
   "esnext": true,
   "laxcomma": true,
   "globals": { "require": false, "__dirname": false, "console": false, "module": false, "exports": false }
