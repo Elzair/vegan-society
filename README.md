@@ -1,4 +1,6 @@
-vegan-society
+Vegan Society
 =============
 
-Git repository for code to http://www.vegan-society.org
+This is the git repository for the source code of http://www.vegan-society.org
+
+Copyright © 2014 Philip Woods <elzairthesorcerer@gmail.com>
