@@ -5,7 +5,7 @@ var http     = require('http')
   , route    = require('koa-route')
   , serve    = require('koa-static')
   , stylus   = require('koa-stylus')
-  , main     = require('./routes/main')
+  , routes   = require('./routes')
   ;
 
 // Create koa app
@@ -17,8 +17,8 @@ app.use(stylus(__dirname + '/public'));
 app.use(serve(__dirname + '/public'));
 
 // Route middleware
-app.use(route.get('/', main.main));
-app.use(route.get('/locations/:id', main.location));
+app.use(route.get('/', routes.index));
+app.use(route.get('/locations/:id', routes.location));
 
 // Create HTTP Server
 http.createServer(app.callback()).listen(3000);

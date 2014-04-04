@@ -2,7 +2,7 @@ var entries = require('../models/entries')
   , render  = require('../lib/view')
   ;
 
-exports.main = function *() {
+exports.index = function *() {
   this.body = yield render('main');
 };
 
