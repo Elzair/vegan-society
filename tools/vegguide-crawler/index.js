@@ -40,6 +40,7 @@ var include = [
   , 'tags'
   , 'images'
 ];
+
 /**
  * This function filters out all nonvegan entries & only includes the
  * properties in the include array above.
@@ -65,12 +66,10 @@ function filter(arr) {
 /**
  * This function adds some properties to an array of entries
  * @param arr array of entries
- * @param idnum next id number to use
  * @return array with added properties
  */
-function add(arr, idnum) {
+function add(arr) {
   for (var i=0; i<arr.length; i++) {
-    arr[i].id = idnum++;
     arr[i].imported = true;
   }
   return arr;
@@ -90,8 +89,8 @@ co(function* () {
   // Write first '[' to file
   yield fs.writeFile(__dirname + '/output/locations.json', '[');
 
-  var separator = '', idnum = 1;
-  for (var i=1; i<3000; i++) {
+  var separator = '';
+  for (var i=1; i<6; i++) {
     console.log('Now fetching entries for region ' + i.toString());
     var results = yield request.get({url: 'http://www.vegguide.org/region/'+i.toString(), 
       headers: {'Accept': 'application/json'}});
@@ -105,22 +104,30 @@ co(function* () {
     if (parseInt(region.entry_count, 10) > 0) {
       var locresults = yield request.get({url: 'http://www.vegguide.org/region/'+i.toString()+'/entries', 
         headers: {'Accept': 'application/json'}});
-      var locations = add(filter(JSON.parse(locresults.body)), idnum);
-      idnum += locations.length;
+      var locations = add(filter(JSON.parse(locresults.body)));
 
       // Add GPS coordinates to locations
       for (var j=0; j<locations.length; j++) {
         var l = locations[j];
+
+        // Do not waste bandwidth on entries with incomplete data
         if (l.address1 === undefined || l.city === undefined || l.region === undefined) {
           continue;
         }
+
+        // Use MapQuest Open's Geocoding API
         var qry_str = encodeURIComponent(util.format('%s %s, %s', l.address1, l.city, l.region));
         var url = util.format('http://open.mapquestapi.com/nominatim/v1/search?q=%s&format=json', qry_str);
         console.log(url);
+
+        // Store location as a GeoJSON Point object http://geojson.org/geojson-spec.html#id2
         var gpsresults = yield request.get({url: url, headers: {'User-Agent': 'VeganSocietyCrawler'}});
         var gpsbody = JSON.parse(gpsresults.body);
         if (gpsbody.length > 0) {
-          l.coordinates = [parseFloat(gpsbody[0].lon, 10), parseFloat(gpsbody[0].lat, 10)];
+          l.coordinates = {
+              type: "Point"
+            , coordinates: [parseFloat(gpsbody[0].lon, 10), parseFloat(gpsbody[0].lat, 10)]
+          };
         }
       }
 
