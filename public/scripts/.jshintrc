@@ -1,8 +1,10 @@
 {
-  "undef": true,
-  "unused": true,
-  "esnext": true,
-  "laxcomma": true,
-  "globals": { "angular": false }
+    "undef"   : true
+  , "esnext"  : true
+  , "laxcomma": true
+  , "globals" : { 
+      "L"      : false
+    , "angular": false
+    , "alert"  : false
+  }
 }
-

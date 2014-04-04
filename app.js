@@ -19,6 +19,7 @@ app.use(serve(__dirname + '/public'));
 // Route middleware
 app.use(route.get('/', routes.index));
 app.use(route.get('/locations/:id', routes.location));
+app.use(route.get('/search', routes.search));
 
 // Create HTTP Server
 http.createServer(app.callback()).listen(3000);

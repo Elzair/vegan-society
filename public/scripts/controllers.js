@@ -14,13 +14,18 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
           L.circle(e.latlng, radius).addTo(map);
           
           // Find locations/events around user's location
-          $scope.results = Locations.search({latitude: e.latlng.lat, longitude: e.latlng.lng});
+          Locations.search({lat: e.latlng.lat, lng: e.latlng.lng}).$promise.then(function(locations) {
+            locations.forEach(function(loc, index, array) {
+              L.marker(L.latLng(loc.coordinates.coordinates[1], loc.coordinates.coordinates[0])).addTo(map)
+                .bindPopup(loc.name+' '+loc.short_description);
+            });
+          });
       }
       map.on('locationfound', onLocationFound);
       function onLocationError(e) {
           alert(e.message);
       }
       map.on('locationerror', onLocationError);
-      map.locate({setView: true, maxZoom: 16});
+      map.locate({setView: true, maxZoom: 14});
     }
 ]);
