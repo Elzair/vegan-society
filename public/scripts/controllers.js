@@ -12,12 +12,101 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
           L.marker(e.latlng).addTo(map)
               .bindPopup("You are within " + radius + " meters from this point").openPopup();
           L.circle(e.latlng, radius).addTo(map);
+
+          // Initialize all markers
+          var restaurantMarker = L.AwesomeMarkers.icon({
+            icon: 'cutlery',
+            prefix: 'fa',
+            markerColor: 'red'
+          });
+          var coffeeMarker = L.AwesomeMarkers.icon({
+            icon: 'coffee',
+            prefix: 'fa',
+            markerColor: 'darkred'
+          });
+          var barMarker = L.AwesomeMarkers.icon({
+            icon: 'beer',
+            prefix: 'fa',
+            markerColor: 'orange'
+          });
+          var vendorMarker = L.AwesomeMarkers.icon({
+            icon: 'truck',
+            prefix: 'fa',
+            markerColor: 'green'
+          });
+          var groceryMarker = L.AwesomeMarkers.icon({
+            icon: 'shopping-cart',
+            prefix: 'fa',
+            markerColor: 'darkgreen'
+          });
+          var catererMarker = L.AwesomeMarkers.icon({
+            icon: 'user',
+            prefix: 'fa',
+            markerColor: 'blue'
+          });
+          var generalMarker = L.AwesomeMarkers.icon({
+            icon: 'money',
+            prefix: 'fa',
+            markerColor: 'purple'
+          });
+          var organizationMarker = L.AwesomeMarkers.icon({
+            icon: 'group',
+            prefix: 'fa',
+            markerColor: 'darkpurple'
+          });
+          var hotelMarker = L.AwesomeMarkers.icon({
+            icon: 'home',
+            prefix: 'fa',
+            markerColor: 'cadetblue'
+          });
+          var otherMarker = L.AwesomeMarkers.icon({
+            icon: 'question',
+            prefix: 'fa',
+            markerColor: 'blue'
+          });
           
           // Find locations/events around user's location
           Locations.search({lat: e.latlng.lat, lng: e.latlng.lng}).$promise.then(function(locations) {
             locations.forEach(function(loc, index, array) {
-              L.marker(L.latLng(loc.coordinates.coordinates[1], loc.coordinates.coordinates[0])).addTo(map)
-                .bindPopup(loc.name+' '+loc.short_description);
+              var coords = L.latLng(loc.coordinates.coordinates[1], loc.coordinates.coordinates[0]);
+              var marker = null;
+              switch(loc.categories[0]) {
+                case 'Restaurant':
+                  marker = restaurantMarker;
+                  break;
+                case 'Coffee/Tea/Juice':
+                  marker = coffeeMarker;
+                  break;
+                case 'Bar':
+                  marker = barMarker;
+                  break;
+                case 'Food Court or Street Vendor':
+                  marker = vendorMarker;
+                  break;
+                case 'Grocery/Bakery/Deli':
+                  marker = groceryMarker;
+                  break;
+                case 'Caterer':
+                  marker = catererMarker;
+                  break;
+                case 'General Store':
+                  marker = generalMarker;
+                  break;
+                case 'Organization':
+                  marker = organizationMarker;
+                  break;
+                case 'Hotel/B&B':
+                  marker = hotelMarker;
+                  break;
+                case 'Other':
+                  marker = otherMarker;
+                  break;
+                default:
+                  marker = otherMarker;
+                  break;
+              }
+              L.marker(coords, {bounceOnAdd: true, icon: marker}).addTo(map)
+                .bindPopup(JSON.stringify(loc));
             });
           });
       }
