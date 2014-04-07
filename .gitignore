@@ -18,3 +18,4 @@ conf/db.*.json
 tools/vegguide-crawler/output
 public/lib
 .DS_Store
+public/leaflet-dvf
