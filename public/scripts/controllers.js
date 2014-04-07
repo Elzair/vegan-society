@@ -14,7 +14,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
           L.circle(e.latlng, radius).addTo(map);
 
           // Initialize all markers
-          var restaurantMarker = L.MakiMarkers.icon({
+          /*var restaurantMarker = L.MakiMarkers.icon({
             icon: 'restaurant',
             color: '#d00',
             size: 'l'
@@ -63,13 +63,13 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
             icon: 'marker',
             color: '#000',
             size: 'l'
-          });
+          });*/
           
           // Find locations/events around user's location
           Locations.search({lat: e.latlng.lat, lng: e.latlng.lng}).$promise.then(function(locations) {
             locations.forEach(function(loc, index, array) {
               var coords = L.latLng(loc.coordinates.coordinates[1], loc.coordinates.coordinates[0]);
-              var marker = null;
+              /*var marker = null;
               switch(loc.categories[0]) {
                 case 'Restaurant':
                   marker = restaurantMarker;
@@ -104,8 +104,8 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
                 default:
                   marker = otherMarker;
                   break;
-              }
-              L.marker(coords, {bounceOnAdd: true, icon: marker}).addTo(map)
+              }*/
+              L.marker(coords/*, {bounceOnAdd: true, icon: marker}*/).addTo(map)
                 .bindPopup(JSON.stringify(loc));
             });
           });
