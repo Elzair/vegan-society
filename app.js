@@ -2,11 +2,16 @@ var http     = require('http')
   //, io       = require('socket.io')
   , koa      = require('koa')
   , logger   = require('koa-logger')
+  , os       = require('os')
   , route    = require('koa-route')
   , serve    = require('koa-static')
   , stylus   = require('koa-stylus')
   , routes   = require('./routes')
+  , util     = require('util')
   ;
+
+// Get environment
+var env = process.env.NODE_ENV || 'development';
 
 // Create koa app
 var app = koa();
@@ -21,6 +26,26 @@ app.use(route.get('/', routes.index));
 app.use(route.get('/locations/:id', routes.location));
 app.use(route.get('/search', routes.search));
 
+// Get host and port
+switch(env) {
+  case 'production':
+    global.port = 80;
+    global.host = 'vegan-society.org';
+    break;
+  default:
+    global.port = 3000;
+    // For development environments, use IP address of localhost
+    var interfaces = os.networkInterfaces();
+    for (var prop in interfaces) {
+      for (var i=0; i<interfaces[prop].length; i++) {
+        if (interfaces[prop][i].internal === false && interfaces[prop][i].family === 'IPv4') {
+          global.host = util.format('%s:%d', interfaces[prop][i].address, global.port);
+        }
+      }
+    }
+    break;
+}
+
 // Create HTTP Server
-http.createServer(app.callback()).listen(3000);
-console.log('Server listening on port 3000');
+http.createServer(app.callback()).listen(global.port);
+console.log(util.format('Server listening on port %s', global.port));

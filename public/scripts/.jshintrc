@@ -3,8 +3,10 @@
   , "esnext"  : true
   , "laxcomma": true
   , "globals" : { 
-      "L"      : false
-    , "angular": false
-    , "alert"  : false
+      "L"       : false
+    , "angular" : false
+    , "alert"   : false
+    , "console" : false
+    , "document": false
   }
 }

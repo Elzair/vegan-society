@@ -14,55 +14,55 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
           L.circle(e.latlng, radius).addTo(map);
 
           // Initialize all markers
-          var restaurantMarker = L.AwesomeMarkers.icon({
-            icon: 'cutlery',
-            prefix: 'fa',
-            markerColor: 'red'
+          var restaurantMarker = L.MakiMarkers.icon({
+            icon: 'restaurant',
+            color: '#d00',
+            size: 'l'
           });
-          var coffeeMarker = L.AwesomeMarkers.icon({
+          var coffeeMarker = L.MakiMarkers.icon({
             icon: 'coffee',
-            prefix: 'fa',
-            markerColor: 'darkred'
+            color: '#800',
+            size: 'l'
           });
-          var barMarker = L.AwesomeMarkers.icon({
+          var barMarker = L.MakiMarkers.icon({
             icon: 'beer',
-            prefix: 'fa',
-            markerColor: 'orange'
+            color: '#f80',
+            size: 'l'
           });
-          var vendorMarker = L.AwesomeMarkers.icon({
-            icon: 'truck',
-            prefix: 'fa',
-            markerColor: 'green'
+          var vendorMarker = L.MakiMarkers.icon({
+            icon: 'bus',
+            color: '#0c0',
+            size: 'l'
           });
-          var groceryMarker = L.AwesomeMarkers.icon({
-            icon: 'shopping-cart',
-            prefix: 'fa',
-            markerColor: 'darkgreen'
+          var groceryMarker = L.MakiMarkers.icon({
+            icon: 'grocery',
+            color: '#080',
+            size: 'l'
           });
-          var catererMarker = L.AwesomeMarkers.icon({
-            icon: 'user',
-            prefix: 'fa',
-            markerColor: 'blue'
+          var catererMarker = L.MakiMarkers.icon({
+            icon: 'mobilephone',
+            color: '#36f',
+            size: 'l'
           });
-          var generalMarker = L.AwesomeMarkers.icon({
-            icon: 'money',
-            prefix: 'fa',
-            markerColor: 'purple'
+          var generalMarker = L.MakiMarkers.icon({
+            icon: 'commercial',
+            color: '#c0c',
+            size: 'l'
           });
-          var organizationMarker = L.AwesomeMarkers.icon({
-            icon: 'group',
-            prefix: 'fa',
-            markerColor: 'darkpurple'
+          var organizationMarker = L.MakiMarkers.icon({
+            icon: 'building',
+            color: '#808',
+            size: 'l'
           });
-          var hotelMarker = L.AwesomeMarkers.icon({
-            icon: 'home',
-            prefix: 'fa',
-            markerColor: 'cadetblue'
+          var hotelMarker = L.MakiMarkers.icon({
+            icon: 'lodging',
+            color: '#00f',
+            size: 'l'
           });
-          var otherMarker = L.AwesomeMarkers.icon({
-            icon: 'question',
-            prefix: 'fa',
-            markerColor: 'blue'
+          var otherMarker = L.MakiMarkers.icon({
+            icon: 'marker',
+            color: '#000',
+            size: 'l'
           });
           
           // Find locations/events around user's location

@@ -3,7 +3,7 @@ var entries = require('../models/entries')
   ;
 
 exports.index = function *() {
-  this.response.body = yield render('main');
+  this.response.body = yield render('main', {host: global.host});
 };
 
 exports.location = function *(id) {
@@ -12,6 +12,7 @@ exports.location = function *(id) {
 
 exports.search = function *() {
   this.response.type = 'application/json';
+  this.response.set('Access-Control-Allow-Origin', '*');
   if (this.request.query.lat === undefined || this.request.query.lng === undefined) {
     this.response.status = 406;
     this.response.body = JSON.stringify({"Error": "Invalid Parameters!"});
