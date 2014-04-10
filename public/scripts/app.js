@@ -1,6 +1,6 @@
-var angular        = require('angular')
-    mapControllers = require('./controllers')
+var mapControllers = require('./controllers')
   , interpolate    = require('./interpolate')
+  //, appStyle       = require('!css!stylus!../stylesheets/app.styl')
   ;
 
 var mapApp = angular.module('mapApp', [

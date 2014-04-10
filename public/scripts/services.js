@@ -1,4 +1,4 @@
-var angular = require('angular');
+//var angular = require('angular');
 
 var mapServices = angular.module('mapServices', ['ngResource']);
 
