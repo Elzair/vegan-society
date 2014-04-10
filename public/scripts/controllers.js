@@ -1,6 +1,7 @@
 var /*angular     = require('angular')
   ,*/ L           = require('leaflet')
-  , mapServices = require('./services')
+  , bounceMarker  = require('./bouncemarker')
+  , mapServices   = require('./services')
   ;
 
 var mapControllers = angular.module('mapControllers', ['mapServices']);
