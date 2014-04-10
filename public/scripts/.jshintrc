@@ -9,5 +9,6 @@
     , "console" : false
     , "document": false
     , "window"  : false
+    , "require" : false
   }
 }

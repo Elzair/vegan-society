@@ -1,3 +1,8 @@
+var angular     = require('angular')
+    L           = require('leaflet')
+  , mapServices = require('./services')
+  ;
+
 var mapControllers = angular.module('mapControllers', ['mapServices']);
 
 mapControllers.controller('MapCtrl', ['$scope', 'Locations',
@@ -136,6 +141,8 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
       
       map.on('locationfound', function (e) {
         var radius = e.accuracy / 2;
+        console.log(radius);
+        L.Icon.Default.imagePath = '/images';
         L.marker(e.latlng).addTo(map)
             .bindPopup("You are within " + radius + " meters from this point").openPopup();
         L.circle(e.latlng, radius).addTo(map);

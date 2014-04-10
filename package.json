@@ -36,7 +36,10 @@
     "socket.io": "~0.9.16",
     "co-monk": "~1.0.0",
     "monk": "~0.8.1",
-    "co-fs": "~1.2.0"
+    "co-fs": "~1.2.0",
+    "angular-leaflet-directive": "~0.7.6",
+    "angular": "~1.2.15",
+    "leaflet": "~0.7.2"
   },
   "devDependencies": {
     "browserify": "~3.33.0",

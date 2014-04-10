@@ -1,3 +1,8 @@
+var angular        = require('angular')
+    mapControllers = require('./controllers')
+  , interpolate    = require('./interpolate')
+  ;
+
 var mapApp = angular.module('mapApp', [
     'ngRoute'
   , 'interpolate'
