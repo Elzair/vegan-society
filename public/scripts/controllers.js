@@ -141,7 +141,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
       
       map.on('locationfound', function (e) {
         var radius = e.accuracy / 2;
-        console.log(radius);
+        // Set default image path so Leaflet will show default marker
         L.Icon.Default.imagePath = '/images';
         L.marker(e.latlng).addTo(map)
             .bindPopup("You are within " + radius + " meters from this point").openPopup();
