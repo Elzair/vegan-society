@@ -1,5 +1,5 @@
-var /*angular     = require('angular')*/
-    L           = require('leaflet')
+var /*angular     = require('angular')
+  ,*/ L           = require('leaflet')
   , mapServices = require('./services')
   ;
 

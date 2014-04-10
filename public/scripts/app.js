@@ -1,4 +1,5 @@
-var mapControllers = require('./controllers')
+var /*angular        = require('angular')
+  ,*/ mapControllers = require('./controllers')
   , interpolate    = require('./interpolate')
   //, appStyle       = require('!css!stylus!../stylesheets/app.styl')
   ;

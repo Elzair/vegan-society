@@ -2,7 +2,8 @@ module.exports = {
     context: __dirname
   , entry: {
         scripts: [
-            "leaflet"
+          /*  "angular"
+          ,*/ "leaflet"
           , "./public/scripts/app"
           , "./public/scripts/bouncemarker"
           , "./public/scripts/controllers"

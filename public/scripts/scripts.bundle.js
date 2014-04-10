@@ -57,7 +57,8 @@
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var mapControllers = __webpack_require__(3)
+	var /*angular        = require('angular')
+	  ,*/ mapControllers = __webpack_require__(3)
 	  , interpolate    = __webpack_require__(4)
 	  //, appStyle       = require('!css!stylus!../stylesheets/app.styl')
 	  ;
@@ -283,8 +284,8 @@
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var /*angular     = require('angular')*/
-	    L           = __webpack_require__(6)
+	var /*angular     = require('angular')
+	  ,*/ L           = __webpack_require__(6)
 	  , mapServices = __webpack_require__(5)
 	  ;
 
