@@ -19,3 +19,4 @@ tools/vegguide-crawler/output
 public/lib
 .DS_Store
 public/images/sjjb
+public/.bundle.js
