@@ -20,7 +20,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
         var restaurantMarker = L.icon({
           iconUrl: '/images/sjjb/restaurant.svg',
           iconSize: [width,height],
-          popupAnchor: [0,0]
+          popupAnchor: [0,-height/2]
         });
         var coffeeMarker = L.icon({
           iconUrl: '/images/sjjb/coffee.svg',
@@ -123,7 +123,6 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
 
               L.marker(coords, {bounceOnAdd: true, icon: marker}).addTo(map)
                 .bindPopup(JSON.stringify(loc));
-
             }
           });
         });
