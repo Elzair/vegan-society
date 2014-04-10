@@ -4,8 +4,8 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
     function($scope, Locations) {
       // Initialize map
       var map = L.map('map');
-      L.tileLayer('http://{s}.tile.cloudmade.com/3d9c4d3562fd4e699ed3589691adcb05/997/256/{z}/{x}/{y}.png', {
-          attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
+      L.tileLayer('https://{s}.tiles.mapbox.com/v3/elzair.hod9j49e/{z}/{x}/{y}.png', {
+          attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">MapBox</a>',
           maxZoom: 18
       }).addTo(map);
 
@@ -13,55 +13,58 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
       $scope.locationIDs = [];
 
       function find_nearby_locations(lat, lng) {
+        // Use 64 pixels for a retina display and 32 pixels otherwise
+        var width = (window.devicePixelRation > 1) ? 64 : 32;
+        var height= (window.devicePixelRation > 1) ? 64 : 32;
         // Initialize all markers
         var restaurantMarker = L.icon({
           iconUrl: '/images/sjjb/restaurant.svg',
-          iconSize: [64,64],
+          iconSize: [width,height],
           popupAnchor: [0,0]
         });
         var coffeeMarker = L.icon({
           iconUrl: '/images/sjjb/coffee.svg',
-          iconSize: [64,64],
+          iconSize: [width,height],
           popupAnchor: [0,0]
         });
         var barMarker = L.icon({
           iconUrl: '/images/sjjb/bar.svg',
-          iconSize: [64,64],
+          iconSize: [width,height],
           popupAnchor: [0,0]
         });
         var vendorMarker = L.icon({
           iconUrl: '/images/sjjb/vendor.svg',
-          iconSize: [64,64],
+          iconSize: [width,height],
           popupAnchor: [0,0]
         });
         var groceryMarker = L.icon({
           iconUrl: '/images/sjjb/grocery.svg',
-          iconSize: [64,64],
+          iconSize: [width,height],
           popupAnchor: [0,0]
         });
         var catererMarker = L.icon({
           iconUrl: '/images/sjjb/caterer.svg',
-          iconSize: [64,64],
+          iconSize: [width,height],
           popupAnchor: [0,0]
         });
         var generalMarker = L.icon({
           iconUrl: '/images/sjjb/general.svg',
-          iconSize: [64,64],
+          iconSize: [width,height],
           popupAnchor: [0,0]
         });
         var organizationMarker = L.icon({
           iconUrl: '/images/sjjb/organization.svg',
-          iconSize: [64,64],
+          iconSize: [width,height],
           popupAnchor: [0,0]
         });
         var hotelMarker = L.icon({
           iconUrl: '/images/sjjb/hotel.svg',
-          iconSize: [64,64],
+          iconSize: [width,height],
           popupAnchor: [0,0]
         });
         var otherMarker = L.icon({
           iconUrl: '/images/sjjb/other.svg',
-          iconSize: [64,64],
+          iconSize: [width,height],
           popupAnchor: [0,0]
         });
         
