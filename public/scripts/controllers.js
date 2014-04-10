@@ -140,12 +140,14 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
       });
       
       map.on('locationfound', function (e) {
-        var radius = e.accuracy / 2;
+        var cradius = e.accuracy / 2;
+        var cmradius = (window.devicePixelRation > 1) ? 16 : 18;
         // Set default image path so Leaflet will show default marker
-        L.Icon.Default.imagePath = '/images';
-        L.marker(e.latlng).addTo(map)
-            .bindPopup("You are within " + radius + " meters from this point").openPopup();
-        L.circle(e.latlng, radius).addTo(map);
+        //L.Icon.Default.imagePath = '/images';
+        //L.marker(e.latlng).addTo(map)
+        //    .bindPopup("You are within " + radius + " meters from this point").openPopup();
+        L.circle(e.latlng, cradius).addTo(map);
+        L.circleMarker(e.latlng, cmradius).addTo(map);
 
         // Search for places near user's current location
         find_nearby_locations(e.latlng.lat, e.latlng.lng);
