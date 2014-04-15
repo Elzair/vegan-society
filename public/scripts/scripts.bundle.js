@@ -45,12 +45,42 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	__webpack_require__(2);
-	module.exports = __webpack_require__(1);
+	__webpack_require__(1);
+	module.exports = __webpack_require__(2);
 
 
 /***/ },
 /* 1 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var /*angular        = require('angular')
+	  ,*/ mapControllers = __webpack_require__(7)
+	  , interpolate    = __webpack_require__(8)
+	  ;
+
+	var mapApp = angular.module('mapApp', [
+	    'ngRoute'
+	  , 'interpolate'
+	  , 'mapControllers'
+	]);
+
+	mapApp.config(['$routeProvider',
+	    function($routeProvider) {
+	      $routeProvider
+	        .when('/', {
+	          templateUrl: '/templates/map.html',
+	          controller: 'MapCtrl'
+	        }) 
+	        .otherwise({
+	          redirectTo: '/'
+	        });
+	    }
+	]);
+
+
+
+/***/ },
+/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -2866,36 +2896,6 @@
 	}());
 
 /***/ },
-/* 2 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var /*angular        = require('angular')
-	  ,*/ mapControllers = __webpack_require__(7)
-	  , interpolate    = __webpack_require__(8)
-	  ;
-
-	var mapApp = angular.module('mapApp', [
-	    'ngRoute'
-	  , 'interpolate'
-	  , 'mapControllers'
-	]);
-
-	mapApp.config(['$routeProvider',
-	    function($routeProvider) {
-	      $routeProvider
-	        .when('/', {
-	          templateUrl: '/templates/map.html',
-	          controller: 'MapCtrl'
-	        }) 
-	        .otherwise({
-	          redirectTo: '/'
-	        });
-	    }
-	]);
-
-
-
-/***/ },
 /* 3 */,
 /* 4 */,
 /* 5 */,
@@ -2907,7 +2907,7 @@
 	  ,*/ L           = __webpack_require__(12)
 	  , bounceMarker  = __webpack_require__(10)
 	  , mapServices   = __webpack_require__(11)
-	  , _             = __webpack_require__(15)
+	  , _             = __webpack_require__(13)
 	  ;
 
 	var mapControllers = angular.module('mapControllers', ['mapServices']);
@@ -2925,7 +2925,7 @@
 	      $scope.locationIDs = [];
 
 	      // Initialize popup template
-	      var template = _.template("<div id=\"content\"> <h2 id=\"firstHeading\" class=\"firstHeading\"><%= name %></h2> <div id=\"bodyContent\"> <p><%= short_description %></p> <p><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p> </div> </div> <div id=\"side\"><div id=\"side-table\"> <div id=\"side-el\"> <a href=\"/locations/<%= _id %>\"> <img src=\"/images/right_arrow.svg\" alt=\"More detail\"/> </a> </div> </div> </div>");
+	      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading\"><%= name %></h2> <div class=\"bodyContent\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p></div> <img class=\"popup-image\" src=\"<%= images[0].files[0].uri %>\" alt=\"<%= images[0].caption %>\"></div>");
 
 	      function find_nearby_locations(lat, lng) {
 	        // Use 64 pixels for a retina display and 32 pixels otherwise
@@ -12475,9 +12475,7 @@
 	}(window, document));
 
 /***/ },
-/* 13 */,
-/* 14 */,
-/* 15 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.6.0

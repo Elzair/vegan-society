@@ -20,7 +20,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
       $scope.locationIDs = [];
 
       // Initialize popup template
-      var template = _.template("<div id=\"content\"> <h2 id=\"firstHeading\" class=\"firstHeading\"><%= name %></h2> <div id=\"bodyContent\"> <p><%= short_description %></p> <p><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p> </div> </div> <div id=\"side\"><div id=\"side-table\"> <div id=\"side-el\"> <a href=\"/locations/<%= _id %>\"> <img src=\"/images/right_arrow.svg\" alt=\"More detail\"/> </a> </div> </div> </div>");
+      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading\"><%= name %></h2> <div class=\"bodyContent\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p></div> <img class=\"popup-image\" src=\"<%= images[0].files[0].uri %>\" alt=\"<%= images[0].caption %>\"></div>");
 
       function find_nearby_locations(lat, lng) {
         // Use 64 pixels for a retina display and 32 pixels otherwise
