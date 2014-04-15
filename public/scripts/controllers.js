@@ -50,7 +50,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
         var groceryMarker = L.icon({
           iconUrl: '/images/sjjb/grocery.svg',
           iconSize: [width,height],
-          popupAnchor: [0,0]
+          popupAnchor: [0,-height/2]
         });
         var catererMarker = L.icon({
           iconUrl: '/images/sjjb/caterer.svg',

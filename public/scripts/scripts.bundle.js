@@ -54,8 +54,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular        = require('angular')
-	  ,*/ mapControllers = __webpack_require__(7)
-	  , interpolate    = __webpack_require__(8)
+	  ,*/ mapControllers = __webpack_require__(3)
+	  , interpolate    = __webpack_require__(4)
 	  ;
 
 	var mapApp = angular.module('mapApp', [
@@ -2896,17 +2896,13 @@
 	}());
 
 /***/ },
-/* 3 */,
-/* 4 */,
-/* 5 */,
-/* 6 */,
-/* 7 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
-	  ,*/ L           = __webpack_require__(12)
-	  , bounceMarker  = __webpack_require__(10)
-	  , mapServices   = __webpack_require__(11)
+	  ,*/ L           = __webpack_require__(11)
+	  , bounceMarker  = __webpack_require__(5)
+	  , mapServices   = __webpack_require__(6)
 	  , _             = __webpack_require__(13)
 	  ;
 
@@ -2955,7 +2951,7 @@
 	        var groceryMarker = L.icon({
 	          iconUrl: '/images/sjjb/grocery.svg',
 	          iconSize: [width,height],
-	          popupAnchor: [0,0]
+	          popupAnchor: [0,-height/2]
 	        });
 	        var catererMarker = L.icon({
 	          iconUrl: '/images/sjjb/caterer.svg',
@@ -3073,7 +3069,7 @@
 
 
 /***/ },
-/* 8 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var angular = require('angular');
@@ -3085,11 +3081,10 @@
 
 
 /***/ },
-/* 9 */,
-/* 10 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var L = __webpack_require__(12);
+	var L = __webpack_require__(11);
 	/**
 	 * Copyright (C) 2013 Maxime Hadjinlian <maxime.hadjinlian@gmail.com>
 	 * All Rights Reserved.
@@ -3282,7 +3277,7 @@
 
 
 /***/ },
-/* 11 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var angular = require('angular');
@@ -3301,7 +3296,11 @@
 
 
 /***/ },
-/* 12 */
+/* 7 */,
+/* 8 */,
+/* 9 */,
+/* 10 */,
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
@@ -12475,6 +12474,7 @@
 	}(window, document));
 
 /***/ },
+/* 12 */,
 /* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
