@@ -2,7 +2,8 @@ module.exports = {
     context: __dirname
   , entry: {
         scripts: [
-          "./public/scripts/app"
+            "./public/scripts/app"
+          , "./node_modules/angular-leaflet-directive/dist/angular-leaflet-directive"
         ]
       , stylesheets: [
             "./public/stylesheets/app.styl"
