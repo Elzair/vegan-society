@@ -73,7 +73,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports =
-		"html,\nbody,\n.fullscreen,\n#map {\n  height: 100%;\n  margin: 0;\n  padding: 0;\n}\n.hidden {\n  display: none;\n}\n.firstHeading {\n  color: #008000;\n  text-align: center;\n}\n.bodyContent {\n  display: -moz-box;\n  display: -webkit-box;\n  display: box;\n  display: -moz-flexbox;\n  display: -webkit-flexbox;\n  display: -ms-flexbox;\n  display: flexbox;\n  display: -webkit-flex;\n  display: flex;\n  box-orient: horizontal;\n  box-direction: normal;\n  flex-direction: row;\n  box-pack: center;\n  flex-pack: center;\n  justify-content: center;\n}\n#address1 {\n  margin-bottom: 0;\n}\n#address2 {\n  margin-top: 0;\n}\n";
+		"html,\nbody,\n.fullscreen,\n#map {\n  height: 100%;\n  margin: 0;\n  padding: 0;\n}\n.hidden {\n  display: none;\n}\n.firstHeading {\n  color: #008000;\n  text-align: center;\n}\n.bodyContent {\n  display: -moz-box;\n  display: -webkit-box;\n  display: box;\n  display: -moz-flexbox;\n  display: -webkit-flexbox;\n  display: -ms-flexbox;\n  display: flexbox;\n  display: -webkit-flex;\n  display: flex;\n  box-orient: horizontal;\n  box-direction: normal;\n  flex-direction: row;\n  box-pack: justify;\n  flex-pack: justify;\n  justify-content: space-between;\n}\n#address1 {\n  margin-bottom: 0;\n}\n#address2 {\n  margin-top: 0;\n}\n";
 
 /***/ },
 /* 9 */
