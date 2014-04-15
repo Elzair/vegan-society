@@ -39,7 +39,8 @@
     "co-fs": "~1.2.0",
     "angular-leaflet-directive": "~0.7.6",
     "angular": "~1.2.15",
-    "leaflet": "~0.7.2"
+    "leaflet": "~0.7.2",
+    "underscore": "~1.6.0"
   },
   "devDependencies": {
     "gulp": "~3.5.6",
