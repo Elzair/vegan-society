@@ -11,3 +11,13 @@ mapServices.factory('Locations', ['$resource',
       });
     }
 ]);
+
+mapServices.factory('LocationInfo', ['$resource',
+    function($resource) {
+      var host = document.querySelector("#host").innerHTML;
+      console.log(host);
+      return $resource('http://' + host + '/locations/:id', {}, {
+        get: {method: 'GET', responseType: 'json'}
+      });
+    }
+]);

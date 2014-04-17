@@ -3,14 +3,27 @@ var entries = require('../models/entries')
   ;
 
 exports.index = function *() {
+  console.log(this.request.header);
   this.response.body = yield render('main', {host: global.host});
 };
 
 exports.location = function *(id) {
-  this.response.body = yield entries.findById(id);
+  console.log(this.request.header);
+  //this.response.body = yield entries.findById(id);
+  var entry = yield entries.findById(id);
+  // Ajax Request
+  if (this.request.header.referer !== undefined) {
+    this.response.type = 'application/json';
+    this.response.set('Access-Control-Allow-Origin', '*');
+    this.response.body = entry;
+  }
+  else {
+    this.response.body = yield render('entry', {host: global.host, entry: entry});
+  }
 };
 
 exports.search = function *() {
+  console.log(this.request.header);
   this.response.type = 'application/json';
   this.response.set('Access-Control-Allow-Origin', '*');
   if (this.request.query.lat === undefined || this.request.query.lng === undefined) {

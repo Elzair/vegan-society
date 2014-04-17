@@ -20,7 +20,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
       $scope.locationIDs = [];
 
       // Initialize popup template
-      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading\"><%= name %></h2> <div class=\"bodyContent\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p></div> <img class=\"popup-image\" src=\"<%= images[0].files[0].uri %>\" alt=\"<%= images[0].caption %>\"></div>");
+      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading\"><%= name %></h2> <div class=\"bodyContent\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/locations/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= images[0].files[0].uri %>\" alt=\"<%= images[0].caption %>\"></div>");
 
       function find_nearby_locations(lat, lng) {
         // Use 64 pixels for a retina display and 32 pixels otherwise
@@ -92,6 +92,9 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
             if (!duplicate) {
               // Push location ID to array
               $scope.locationIDs.push(loc._id);
+
+              // Set all entry URLs to begin with '/#' if browser does not support HTML5 History API
+              loc.hash = (window.history && window.history.pushState) ? '' : '/#';
 
               var coords = L.latLng(loc.coordinates.coordinates[1], loc.coordinates.coordinates[0]);
               var marker = null;
