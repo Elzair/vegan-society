@@ -1,14 +1,16 @@
 var /*angular        = require('angular')
   ,*/ entryControllers = require('./entry-controllers')
-  , mapControllers = require('./map-controllers')
+  , filters        = require('./filters')
   , interpolate    = require('./interpolate')
+  , mapControllers = require('./map-controllers')
   ;
 
 var mapApp = angular.module('mapApp', [
     'ngRoute'
+  , 'entryControllers'
+  , 'filters'
   , 'interpolate'
   , 'mapControllers'
-  , 'entryControllers'
 ]);
 
 mapApp.config(['$routeProvider', '$locationProvider',

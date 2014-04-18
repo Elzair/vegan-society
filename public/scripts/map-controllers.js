@@ -20,12 +20,13 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
       $scope.locationIDs = [];
 
       // Initialize popup template
-      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading\"><%= name %></h2> <div class=\"bodyContent\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/locations/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= images[0].files[0].uri %>\" alt=\"<%= images[0].caption %>\"></div>");
+      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading <%= popup_class %>\"><%= name %></h2> <div class=\"bodyContent <%= popup_class %>\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/locations/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= images[0].files[thumbnail].uri %>\" alt=\"<%= images[0].caption %>\"></div>");
 
       function find_nearby_locations(lat, lng) {
         // Use 64 pixels for a retina display and 32 pixels otherwise
-        var width = (window.devicePixelRation > 1) ? 64 : 32;
-        var height= (window.devicePixelRation > 1) ? 64 : 32;
+        var width = (window.devicePixelRatio > 1) ? 64 : 32;
+        var height = (window.devicePixelRatio > 1) ? 64 : 32;
+
         // Initialize all markers
         var restaurantMarker = L.icon({
           iconUrl: '/images/sjjb/restaurant.svg',
@@ -95,6 +96,10 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
 
               // Set all entry URLs to begin with '/#' if browser does not support HTML5 History API
               loc.hash = (window.history && window.history.pushState) ? '' : '/#';
+
+              // Set which size image to use for thumbnails and what size of text to use
+              loc.thumbnail = (window.devicePixelRatio > 1) ? 1 : 0;
+              loc.popup_class = (window.devicePixelRatio > 1) ? 'large' : '';
 
               var coords = L.latLng(loc.coordinates.coordinates[1], loc.coordinates.coordinates[0]);
               var marker = null;

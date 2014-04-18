@@ -1,1 +1,79 @@
-<div id="entry">[[ info | json ]]</div>
+<div id="entry" class="hidden">[[ info | json ]]</div>
+<h1 class="firstHeading">[[ info.name ]]</h1>
+<div class="description" ng-bind-html="description"></div>
+<div class="bodyContent">
+  <ul class="info">
+    <li>
+      <dl>
+        <dt>Address</dt>
+        <dd>[[ info.address ]]</dd>
+        <dd>[[ info.city + ', ' + info.region + info.postal_code ]]</dd>
+        <dd>[[ info.country ]]
+      </dl>
+    </li>
+    <li>
+      <dl>
+        <dt>Phone</dt>
+        <dd>[[ info.phone ]]</dd>
+      </dl>
+    </li>
+    <li>
+      <dl>
+        <dt>Website</dt>
+        <dd><a href="[[ info.website ]]">[[ info.website ]]</a></dd>
+      </dl>
+    </li>
+    <li>
+      <dl>
+        <dt>Categories</dt>
+        <dd ng-repeat="category in info.categories">[[ category ]]</dd>
+      </dl>
+    </li>
+    <li ng-hide="info.cuisines.length === 0">
+      <dl>
+        <dt>Cuisines</dt>
+        <dd ng-repeat="cuisine in info.cuisines">[[ cuisine ]]</dd>
+      </dl>
+    </li>
+    <li>
+      <dl>
+        <dt>Accepts Reservations</dt>
+        <dd>[[ info.accepts_reservations | checkmark ]]</dd>
+      </dl>
+    </li>
+    <li>
+      <dl>
+        <dt>Allows Smoking</dt>
+        <dd>[[ info.allows_smoking | checkmark ]]</dd>
+      </dl>
+    </li>
+    <li>
+      <dl>
+        <dt>Wheelchair Accessible</dt>
+        <dd>[[ info.is_wheelchair_accessible | checkmark ]]</dd>
+      </dl>
+    </li>
+    <li ng-hide="info.is_cash_only !== 0">
+      <dl>
+        <dt>Cash Only</dt>
+        <dd>[[ info.is_cash_only | checkmark ]]</dd>
+      </dl>
+    </li>
+    <li ng-hide="info.is_cash_only === 0">
+      <dl>
+        <dt>Payment Options</dt>
+        <dd ng-repeat="option in info.payment_options">[[ option ]]</dd>
+      </dl>
+    </li>
+    <li>
+      <dl>
+        <dt>Price Range</dt>
+        <dd>[[ info.price_range ]]</dd>
+      </dl>
+    </li>
+  </ul>
+  <div id="images">
+    <img src="[[ info.images[0].files[2].uri ]]" alt="[[ info.images[0].caption ]]">
+  </div>
+</div>
+

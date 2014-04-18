@@ -53,16 +53,18 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular        = require('angular')
-	  ,*/ entryControllers = __webpack_require__(5)
-	  , mapControllers = __webpack_require__(6)
-	  , interpolate    = __webpack_require__(7)
+	  ,*/ entryControllers = __webpack_require__(7)
+	  , filters        = __webpack_require__(8)
+	  , interpolate    = __webpack_require__(9)
+	  , mapControllers = __webpack_require__(10)
 	  ;
 
 	var mapApp = angular.module('mapApp', [
 	    'ngRoute'
+	  , 'entryControllers'
+	  , 'filters'
 	  , 'interpolate'
 	  , 'mapControllers'
-	  , 'entryControllers'
 	]);
 
 	mapApp.config(['$routeProvider', '$locationProvider',
@@ -93,7 +95,9 @@
 /* 2 */,
 /* 3 */,
 /* 4 */,
-/* 5 */
+/* 5 */,
+/* 6 */,
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
@@ -102,26 +106,53 @@
 
 	var entryControllers = angular.module('entryControllers', ['mapServices']);
 
-	entryControllers.controller('EntryCtrl', ['$scope', '$routeParams', 'LocationInfo',
-	    function($scope, $routeParams, LocationInfo) {
+	entryControllers.controller('EntryCtrl', ['$scope', '$routeParams', '$sce', 'LocationInfo',
+	    function($scope, $routeParams, $sce, LocationInfo) {
 	      console.log('Got to Entry control!');
 	      LocationInfo.get({id: $routeParams.id}).$promise.then(function(info) {
 	        console.log(info);
+	        info.address = (info.address2 !== undefined) ? info.address1 + ', ' + info.address2 : info.address1;
 	        $scope.info = info;
+	        $scope.description = $sce.trustAsHtml(info.long_description['text/html']);
 	      });
 	    }
 	]);
 
 
 /***/ },
-/* 6 */
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var filters = angular.module('filters', []);
+
+	filters.filter('checkmark', function() {
+	  return function(input) {
+	    return input ? '\u2713' : '\u2718';
+	  };
+	});
+
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	//var angular = require('angular');
+
+	var interpolate = angular.module('interpolate', [], function($interpolateProvider) {
+	  $interpolateProvider.startSymbol('[[');
+	  $interpolateProvider.endSymbol(']]');
+	});
+
+
+/***/ },
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
-	  ,*/ L           = __webpack_require__(12)
-	  , bounceMarker  = __webpack_require__(10)
+	  ,*/ L           = __webpack_require__(13)
+	  , bounceMarker  = __webpack_require__(12)
 	  , mapServices   = __webpack_require__(11)
-	  , _             = __webpack_require__(15)
+	  , _             = __webpack_require__(16)
 	  ;
 
 	var mapControllers = angular.module('mapControllers', ['mapServices']);
@@ -139,12 +170,13 @@
 	      $scope.locationIDs = [];
 
 	      // Initialize popup template
-	      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading\"><%= name %></h2> <div class=\"bodyContent\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/locations/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= images[0].files[0].uri %>\" alt=\"<%= images[0].caption %>\"></div>");
+	      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading <%= popup_class %>\"><%= name %></h2> <div class=\"bodyContent <%= popup_class %>\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/locations/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= images[0].files[thumbnail].uri %>\" alt=\"<%= images[0].caption %>\"></div>");
 
 	      function find_nearby_locations(lat, lng) {
 	        // Use 64 pixels for a retina display and 32 pixels otherwise
-	        var width = (window.devicePixelRation > 1) ? 64 : 32;
-	        var height= (window.devicePixelRation > 1) ? 64 : 32;
+	        var width = (window.devicePixelRatio > 1) ? 64 : 32;
+	        var height = (window.devicePixelRatio > 1) ? 64 : 32;
+
 	        // Initialize all markers
 	        var restaurantMarker = L.icon({
 	          iconUrl: '/images/sjjb/restaurant.svg',
@@ -214,6 +246,10 @@
 
 	              // Set all entry URLs to begin with '/#' if browser does not support HTML5 History API
 	              loc.hash = (window.history && window.history.pushState) ? '' : '/#';
+
+	              // Set which size image to use for thumbnails and what size of text to use
+	              loc.thumbnail = (window.devicePixelRatio > 1) ? 1 : 0;
+	              loc.popup_class = (window.devicePixelRatio > 1) ? 'large' : '';
 
 	              var coords = L.latLng(loc.coordinates.coordinates[1], loc.coordinates.coordinates[0]);
 	              var marker = null;
@@ -290,24 +326,39 @@
 
 
 /***/ },
-/* 7 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var angular = require('angular');
 
-	var interpolate = angular.module('interpolate', [], function($interpolateProvider) {
-	  $interpolateProvider.startSymbol('[[');
-	  $interpolateProvider.endSymbol(']]');
-	});
+	var mapServices = angular.module('mapServices', ['ngResource']);
+
+	mapServices.factory('Locations', ['$resource', 
+	    function($resource) {
+	      var host = document.querySelector("#host").innerHTML;
+	      console.log(host);
+	      return $resource('http://' + host + '/search?lat=:lat&lng=:lng', {}, {
+	        search: {method: 'GET', responseType: 'json', isArray: true}
+	      });
+	    }
+	]);
+
+	mapServices.factory('LocationInfo', ['$resource',
+	    function($resource) {
+	      var host = document.querySelector("#host").innerHTML;
+	      console.log(host);
+	      return $resource('http://' + host + '/locations/:id', {}, {
+	        get: {method: 'GET', responseType: 'json'}
+	      });
+	    }
+	]);
 
 
 /***/ },
-/* 8 */,
-/* 9 */,
-/* 10 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var L = __webpack_require__(12);
+	var L = __webpack_require__(13);
 	/**
 	 * Copyright (C) 2013 Maxime Hadjinlian <maxime.hadjinlian@gmail.com>
 	 * All Rights Reserved.
@@ -500,36 +551,7 @@
 
 
 /***/ },
-/* 11 */
-/***/ function(module, exports, __webpack_require__) {
-
-	//var angular = require('angular');
-
-	var mapServices = angular.module('mapServices', ['ngResource']);
-
-	mapServices.factory('Locations', ['$resource', 
-	    function($resource) {
-	      var host = document.querySelector("#host").innerHTML;
-	      console.log(host);
-	      return $resource('http://' + host + '/search?lat=:lat&lng=:lng', {}, {
-	        search: {method: 'GET', responseType: 'json', isArray: true}
-	      });
-	    }
-	]);
-
-	mapServices.factory('LocationInfo', ['$resource',
-	    function($resource) {
-	      var host = document.querySelector("#host").innerHTML;
-	      console.log(host);
-	      return $resource('http://' + host + '/locations/:id', {}, {
-	        get: {method: 'GET', responseType: 'json'}
-	      });
-	    }
-	]);
-
-
-/***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
@@ -9703,9 +9725,9 @@
 	}(window, document));
 
 /***/ },
-/* 13 */,
 /* 14 */,
-/* 15 */
+/* 15 */,
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.6.0
