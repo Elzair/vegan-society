@@ -11,7 +11,7 @@
       <dl>
         <dt>Address</dt>
         <dd>[[ info.address ]]</dd>
-        <dd>[[ info.city + ', ' + info.region + info.postal_code ]]</dd>
+        <dd>[[ info.city + ', ' + info.region + ' ' + info.postal_code ]]</dd>
         <dd>[[ info.country ]]
       </dl>
     </li>
@@ -48,25 +48,25 @@
     <li>
       <dl>
         <dt>Accepts Reservations</dt>
-        <dd>[[ info.accepts_reservations | checkmark ]]</dd>
+        <dd ng-class="{'yes': (info.accepts_reservations), 'no': (!info.accepts_reservations)}">[[ info.accepts_reservations | checkmark ]]</dd>
       </dl>
     </li>
     <li>
       <dl>
         <dt>Allows Smoking</dt>
-        <dd>[[ info.allows_smoking | checkmark ]]</dd>
+        <dd ng-class="{'yes': (info.allows_smoking), 'no': (!info.allows_smoking)}">[[ info.allows_smoking | checkmark ]]</dd>
       </dl>
     </li>
     <li>
       <dl>
         <dt>Wheelchair Accessible</dt>
-        <dd>[[ info.is_wheelchair_accessible | checkmark ]]</dd>
+        <dd ng-class="{'yes': (info.is_wheelchair_accessible), 'no': (!info.is_wheelchair_accessible)}">[[ info.is_wheelchair_accessible | checkmark ]]</dd>
       </dl>
     </li>
     <li ng-hide="info.is_cash_only !== 0">
       <dl>
         <dt>Cash Only</dt>
-        <dd>[[ info.is_cash_only | checkmark ]]</dd>
+        <dd ng-class="{'yes': (info.is_cash_only), 'no': (!info.is_cash_only)}">[[ info.is_cash_only | checkmark ]]</dd>
       </dl>
     </li>
     <li ng-hide="info.is_cash_only === 0">
