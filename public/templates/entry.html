@@ -2,12 +2,8 @@
 <h1 class="firstHeading">[[ info.name ]]</h1>
 <div class="description" ng-bind-html="description"></div>
 <div class="entryContent">
-  <!--<div id="images">
-    <img src="[[ info.images[0].files[2].uri ]]" alt="[[ info.images[0].caption ]]">
-  </div>-->
-  <ul rn-carousel class="image">
-    <li ng-repeat="image in info.images" style="background-image:url([[ image.files[2].uri ]]);background-repeat:no-repeat">
-      <div class="layer" style="height:[[ image.files[2].height ]]px;width:[[ image.files[2].width ]]px"></div>
+  <ul rn-carousel rn-carousel-buffered rn-carousel-indicator rn-carousel-control class="image ng-cloak">
+    <li ng-repeat="image in info.images" ng-style="{'height': image.files[2].height+'px', 'background-image': 'url(' + image.files[2].uri + ')', 'background-size': image.files[2].width+'px '+image.files[2].height+'px', 'background-repeat': 'no-repeat', 'background-position': 'center'}">
     </li>
   </ul>
   <ul class="info">
@@ -22,7 +18,7 @@
     <li>
       <dl>
         <dt>Phone</dt>
-        <dd>[[ info.phone ]]</dd>
+        <dd><a href="tel:[[ info.phone ]]">[[ info.phone ]]</a></dd>
       </dl>
     </li>
     <li>
@@ -41,6 +37,12 @@
       <dl>
         <dt>Cuisines</dt>
         <dd ng-repeat="cuisine in info.cuisines">[[ cuisine ]]</dd>
+      </dl>
+    </li>
+    <li>
+      <dl>
+        <dt>Price Range</dt>
+        <dd>[[ info.price_range ]]</dd>
       </dl>
     </li>
     <li>
@@ -71,12 +73,6 @@
       <dl>
         <dt>Payment Options</dt>
         <dd ng-repeat="option in info.payment_options">[[ option ]]</dd>
-      </dl>
-    </li>
-    <li>
-      <dl>
-        <dt>Price Range</dt>
-        <dd>[[ info.price_range ]]</dd>
       </dl>
     </li>
   </ul>

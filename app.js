@@ -24,7 +24,7 @@ app.use(serve(__dirname + '/public'));
 
 // Route middleware
 app.use(route.get('/', routes.index));
-app.use(route.get('/locations/:id', routes.location));
+app.use(route.get('/location/:id', routes.location));
 app.use(route.get('/api/v1/location/:id', api_v1.location));
 app.use(route.get('/api/v1/search', api_v1.search));
 
@@ -32,7 +32,7 @@ app.use(route.get('/api/v1/search', api_v1.search));
 switch(env) {
   case 'production':
     global.port = 80;
-    global.host = 'vegan-society.org';
+    global.host = 'vegan-society.net';
     break;
   default:
     global.port = 3000;

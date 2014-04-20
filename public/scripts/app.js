@@ -1,6 +1,5 @@
 var /*angular        = require('angular')
-  , */carousel       = require('./angular-carousel')
-  , entryControllers = require('./entry-controllers')
+  , */entryControllers = require('./entry-controllers')
   , filters        = require('./filters')
   , interpolate    = require('./interpolate')
   , mapControllers = require('./map-controllers')
@@ -8,7 +7,6 @@ var /*angular        = require('angular')
 
 var mapApp = angular.module('mapApp', [
     'ngRoute'
-  , 'angular-carousel'
   , 'entryControllers'
   , 'filters'
   , 'interpolate'

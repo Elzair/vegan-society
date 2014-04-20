@@ -53,16 +53,14 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular        = require('angular')
-	  , */carousel       = __webpack_require__(2)
-	  , entryControllers = __webpack_require__(3)
-	  , filters        = __webpack_require__(4)
-	  , interpolate    = __webpack_require__(5)
-	  , mapControllers = __webpack_require__(6)
+	  , */entryControllers = __webpack_require__(9)
+	  , filters        = __webpack_require__(10)
+	  , interpolate    = __webpack_require__(11)
+	  , mapControllers = __webpack_require__(12)
 	  ;
 
 	var mapApp = angular.module('mapApp', [
 	    'ngRoute'
-	  , 'angular-carousel'
 	  , 'entryControllers'
 	  , 'filters'
 	  , 'interpolate'
@@ -94,7 +92,13 @@
 
 
 /***/ },
-/* 2 */
+/* 2 */,
+/* 3 */,
+/* 4 */,
+/* 5 */,
+/* 6 */,
+/* 7 */,
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -629,20 +633,20 @@
 
 
 /***/ },
-/* 3 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
-	  , */mapServices   = __webpack_require__(14)
+	  , */carousel       = __webpack_require__(8)
+	  , mapServices   = __webpack_require__(14)
 	  ;
 
-	var entryControllers = angular.module('entryControllers', ['mapServices']);
+	var entryControllers = angular.module('entryControllers', ['angular-carousel', 'mapServices']);
 
 	entryControllers.controller('EntryCtrl', ['$scope', '$routeParams', '$sce', 'LocationInfo',
 	    function($scope, $routeParams, $sce, LocationInfo) {
 	      console.log('Got to Entry control!');
 	      LocationInfo.get({id: $routeParams.id}).$promise.then(function(info) {
-	        console.log(info);
 	        info.address = (info.address2 !== undefined) ? info.address1 + ', ' + info.address2 : info.address1;
 	        $scope.info = info;
 	        $scope.description = $sce.trustAsHtml(info.long_description['text/html']);
@@ -652,7 +656,7 @@
 
 
 /***/ },
-/* 4 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var filters = angular.module('filters', []);
@@ -665,7 +669,7 @@
 
 
 /***/ },
-/* 5 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var angular = require('angular');
@@ -677,7 +681,7 @@
 
 
 /***/ },
-/* 6 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
@@ -858,12 +862,6 @@
 
 
 /***/ },
-/* 7 */,
-/* 8 */,
-/* 9 */,
-/* 10 */,
-/* 11 */,
-/* 12 */,
 /* 13 */,
 /* 14 */
 /***/ function(module, exports, __webpack_require__) {
