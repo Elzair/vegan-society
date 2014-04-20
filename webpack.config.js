@@ -7,6 +7,7 @@ module.exports = {
       , stylesheets: [
             "./public/stylesheets/app.styl"
           , "./node_modules/leaflet/dist/leaflet.css"
+          , "./public/stylesheets/angular-carousel.css"
         ]
     } 
   , output: {

@@ -10,8 +10,27 @@ html, body, .fullscreen, #map
   color green
   text-align center
 
+vendor(prop, args)
+  -webkit-{prop} args
+  -moz-{prop} args
+  -ms-{prop} args
+  -o-{prop} args
+  {prop} args
+
+.flex
+  vendor('display', box)
+  vendor('display', flexbox)
+  vendor('display', flex)
+
 .bodyContent
-  display -moz-box
+  @extend .flex
+  vendor('box-orient', horizontal)
+  vendor('box-direction', normal)
+  vendor('flex-direction', row)
+  vendor('box-pack', justify)
+  vendor('flex-pack', justify)
+  vendor('justify-content', space-between)
+  /*display -moz-box
   display -webkit-box
   display box
   display -moz-flexbox
@@ -25,7 +44,16 @@ html, body, .fullscreen, #map
   flex-direction row
   box-pack justify
   flex-pack justify
-  justify-content space-between
+  justify-content space-between*/
+
+.entryContent
+  @extend .flex
+  vendor('box-orient', vertical)
+  vendor('box-direction', normal)
+  vendor('flex-direction', column)
+  vendor('box-align', center)
+  vendor('flex-align', center)
+  vendor('align-items', center)
 
 #address1
   margin-bottom 0

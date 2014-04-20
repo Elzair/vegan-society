@@ -1,7 +1,15 @@
 <div id="entry" class="hidden">[[ info | json ]]</div>
 <h1 class="firstHeading">[[ info.name ]]</h1>
 <div class="description" ng-bind-html="description"></div>
-<div class="bodyContent">
+<div class="entryContent">
+  <!--<div id="images">
+    <img src="[[ info.images[0].files[2].uri ]]" alt="[[ info.images[0].caption ]]">
+  </div>-->
+  <ul rn-carousel class="image">
+    <li ng-repeat="image in info.images" style="background-image:url([[ image.files[2].uri ]])">
+      <div class="layer">[[ image.files[2].uri ]]</div>
+    </li>
+  </ul>
   <ul class="info">
     <li>
       <dl>
@@ -72,8 +80,5 @@
       </dl>
     </li>
   </ul>
-  <div id="images">
-    <img src="[[ info.images[0].files[2].uri ]]" alt="[[ info.images[0].caption ]]">
-  </div>
 </div>
 
