@@ -45,22 +45,19 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(4);
+	module.exports = __webpack_require__(1);
 
 
 /***/ },
-/* 1 */,
-/* 2 */,
-/* 3 */,
-/* 4 */
+/* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular        = require('angular')
-	  , */carousel       = __webpack_require__(9)
-	  , entryControllers = __webpack_require__(10)
-	  , filters        = __webpack_require__(11)
-	  , interpolate    = __webpack_require__(12)
-	  , mapControllers = __webpack_require__(13)
+	  , */carousel       = __webpack_require__(2)
+	  , entryControllers = __webpack_require__(3)
+	  , filters        = __webpack_require__(4)
+	  , interpolate    = __webpack_require__(5)
+	  , mapControllers = __webpack_require__(6)
 	  ;
 
 	var mapApp = angular.module('mapApp', [
@@ -75,7 +72,7 @@
 	mapApp.config(['$routeProvider', '$locationProvider',
 	    function($routeProvider, $locationProvider) {
 	      $routeProvider
-	        .when('/locations/:id', {
+	        .when('/location/:id', {
 	            templateUrl: '/templates/entry.html'
 	          , controller: 'EntryCtrl'
 	        })
@@ -97,11 +94,7 @@
 
 
 /***/ },
-/* 5 */,
-/* 6 */,
-/* 7 */,
-/* 8 */,
-/* 9 */
+/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -636,7 +629,7 @@
 
 
 /***/ },
-/* 10 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
@@ -659,7 +652,7 @@
 
 
 /***/ },
-/* 11 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var filters = angular.module('filters', []);
@@ -672,7 +665,7 @@
 
 
 /***/ },
-/* 12 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var angular = require('angular');
@@ -684,14 +677,14 @@
 
 
 /***/ },
-/* 13 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
-	  ,*/ L           = __webpack_require__(18)
-	  , bounceMarker  = __webpack_require__(17)
+	  ,*/ L           = __webpack_require__(16)
+	  , bounceMarker  = __webpack_require__(15)
 	  , mapServices   = __webpack_require__(14)
-	  , _             = __webpack_require__(19)
+	  , _             = __webpack_require__(17)
 	  ;
 
 	var mapControllers = angular.module('mapControllers', ['mapServices']);
@@ -709,7 +702,7 @@
 	      $scope.locationIDs = [];
 
 	      // Initialize popup template
-	      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading <%= popup_class %>\"><%= name %></h2> <div class=\"bodyContent <%= popup_class %>\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/locations/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= images[0].files[thumbnail].uri %>\" alt=\"<%= images[0].caption %>\"></div>");
+	      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading <%= popup_class %>\"><%= name %></h2> <div class=\"bodyContent <%= popup_class %>\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/location/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= images[0].files[thumbnail].uri %>\" alt=\"<%= images[0].caption %>\"></div>");
 
 	      function find_nearby_locations(lat, lng) {
 	        // Use 64 pixels for a retina display and 32 pixels otherwise
@@ -865,6 +858,13 @@
 
 
 /***/ },
+/* 7 */,
+/* 8 */,
+/* 9 */,
+/* 10 */,
+/* 11 */,
+/* 12 */,
+/* 13 */,
 /* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -876,7 +876,7 @@
 	    function($resource) {
 	      var host = document.querySelector("#host").innerHTML;
 	      console.log(host);
-	      return $resource('http://' + host + '/search?lat=:lat&lng=:lng', {}, {
+	      return $resource('http://' + host + '/api/v1/search?lat=:lat&lng=:lng', {}, {
 	        search: {method: 'GET', responseType: 'json', isArray: true}
 	      });
 	    }
@@ -886,7 +886,7 @@
 	    function($resource) {
 	      var host = document.querySelector("#host").innerHTML;
 	      console.log(host);
-	      return $resource('http://' + host + '/locations/:id', {}, {
+	      return $resource('http://' + host + '/api/v1/location/:id', {}, {
 	        get: {method: 'GET', responseType: 'json'}
 	      });
 	    }
@@ -894,12 +894,10 @@
 
 
 /***/ },
-/* 15 */,
-/* 16 */,
-/* 17 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var L = __webpack_require__(18);
+	var L = __webpack_require__(16);
 	/**
 	 * Copyright (C) 2013 Maxime Hadjinlian <maxime.hadjinlian@gmail.com>
 	 * All Rights Reserved.
@@ -1092,7 +1090,7 @@
 
 
 /***/ },
-/* 18 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
@@ -10266,7 +10264,7 @@
 	}(window, document));
 
 /***/ },
-/* 19 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.6.0

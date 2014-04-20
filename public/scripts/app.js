@@ -18,7 +18,7 @@ var mapApp = angular.module('mapApp', [
 mapApp.config(['$routeProvider', '$locationProvider',
     function($routeProvider, $locationProvider) {
       $routeProvider
-        .when('/locations/:id', {
+        .when('/location/:id', {
             templateUrl: '/templates/entry.html'
           , controller: 'EntryCtrl'
         })

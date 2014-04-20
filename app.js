@@ -1,4 +1,5 @@
-var http     = require('http')
+var api_v1   = require('./routes/api_v1')
+  , http     = require('http')
   //, io       = require('socket.io')
   , koa      = require('koa')
   , logger   = require('koa-logger')
@@ -24,7 +25,8 @@ app.use(serve(__dirname + '/public'));
 // Route middleware
 app.use(route.get('/', routes.index));
 app.use(route.get('/locations/:id', routes.location));
-app.use(route.get('/search', routes.search));
+app.use(route.get('/api/v1/location/:id', api_v1.location));
+app.use(route.get('/api/v1/search', api_v1.search));
 
 // Get host and port
 switch(env) {

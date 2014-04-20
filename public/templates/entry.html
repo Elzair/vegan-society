@@ -6,8 +6,8 @@
     <img src="[[ info.images[0].files[2].uri ]]" alt="[[ info.images[0].caption ]]">
   </div>-->
   <ul rn-carousel class="image">
-    <li ng-repeat="image in info.images" style="background-image:url([[ image.files[2].uri ]])">
-      <div class="layer">[[ image.files[2].uri ]]</div>
+    <li ng-repeat="image in info.images" style="background-image:url([[ image.files[2].uri ]]);background-repeat:no-repeat">
+      <div class="layer" style="height:[[ image.files[2].height ]]px;width:[[ image.files[2].width ]]px"></div>
     </li>
   </ul>
   <ul class="info">
