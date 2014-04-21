@@ -53,10 +53,10 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular        = require('angular')
-	  , */entryControllers = __webpack_require__(2)
-	  , filters        = __webpack_require__(3)
-	  , interpolate    = __webpack_require__(4)
-	  , mapControllers = __webpack_require__(5)
+	  , */entryControllers = __webpack_require__(6)
+	  , filters        = __webpack_require__(7)
+	  , interpolate    = __webpack_require__(8)
+	  , mapControllers = __webpack_require__(9)
 	  ;
 
 	var mapApp = angular.module('mapApp', [
@@ -92,7 +92,11 @@
 
 
 /***/ },
-/* 2 */
+/* 2 */,
+/* 3 */,
+/* 4 */,
+/* 5 */,
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
@@ -104,7 +108,6 @@
 
 	entryControllers.controller('EntryCtrl', ['$scope', '$routeParams', '$sce', 'LocationInfo',
 	    function($scope, $routeParams, $sce, LocationInfo) {
-	      console.log('Got to Entry control!');
 	      LocationInfo.get({id: $routeParams.id}).$promise.then(function(info) {
 	        info.address = (info.address2 !== undefined) ? info.address1 + ', ' + info.address2 : info.address1;
 	        $scope.info = info;
@@ -115,7 +118,7 @@
 
 
 /***/ },
-/* 3 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var filters = angular.module('filters', []);
@@ -128,7 +131,7 @@
 
 
 /***/ },
-/* 4 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var angular = require('angular');
@@ -140,7 +143,7 @@
 
 
 /***/ },
-/* 5 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
@@ -165,7 +168,7 @@
 	      $scope.locationIDs = [];
 
 	      // Initialize popup template
-	      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading <%= popup_class %>\"><%= name %></h2> <div class=\"bodyContent <%= popup_class %>\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/location/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= images[0].files[thumbnail].uri %>\" alt=\"<%= images[0].caption %>\"></div>");
+	      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading <%= popup_class %>\"><%= name %></h2> <div class=\"bodyContent <%= popup_class %>\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/location/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
 
 	      function find_nearby_locations(lat, lng) {
 	        // Use 64 pixels for a retina display and 32 pixels otherwise
@@ -181,17 +184,17 @@
 	        var coffeeMarker = L.icon({
 	          iconUrl: '/images/sjjb/coffee.svg',
 	          iconSize: [width,height],
-	          popupAnchor: [0,0]
+	          popupAnchor: [0,-height/2]
 	        });
 	        var barMarker = L.icon({
 	          iconUrl: '/images/sjjb/bar.svg',
 	          iconSize: [width,height],
-	          popupAnchor: [0,0]
+	          popupAnchor: [0,-height/2]
 	        });
 	        var vendorMarker = L.icon({
 	          iconUrl: '/images/sjjb/vendor.svg',
 	          iconSize: [width,height],
-	          popupAnchor: [0,0]
+	          popupAnchor: [0,-height/2]
 	        });
 	        var groceryMarker = L.icon({
 	          iconUrl: '/images/sjjb/grocery.svg',
@@ -201,12 +204,12 @@
 	        var catererMarker = L.icon({
 	          iconUrl: '/images/sjjb/caterer.svg',
 	          iconSize: [width,height],
-	          popupAnchor: [0,0]
+	          popupAnchor: [0,-height/2]
 	        });
 	        var generalMarker = L.icon({
 	          iconUrl: '/images/sjjb/general.svg',
 	          iconSize: [width,height],
-	          popupAnchor: [0,0]
+	          popupAnchor: [0,-height/2]
 	        });
 	        var organizationMarker = L.icon({
 	          iconUrl: '/images/sjjb/organization.svg',
@@ -221,7 +224,7 @@
 	        var otherMarker = L.icon({
 	          iconUrl: '/images/sjjb/other.svg',
 	          iconSize: [width,height],
-	          popupAnchor: [0,0]
+	          popupAnchor: [0,-height/2]
 	        });
 	        
 	        // Find locations/events around user's location
@@ -321,10 +324,6 @@
 
 
 /***/ },
-/* 6 */,
-/* 7 */,
-/* 8 */,
-/* 9 */,
 /* 10 */,
 /* 11 */,
 /* 12 */,
