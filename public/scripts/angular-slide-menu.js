@@ -32,7 +32,7 @@ slideMenu.directive('asmPushLeft', function($compile) {
         element[0].classList.add('asm');
         element[0].classList.add('asm-horizontal');
         element[0].classList.add('asm-left');
-        element[0].classList.add('asm-push-left');
+        //element[0].classList.add('asm-push-left');
       }
   };
 });
@@ -44,7 +44,7 @@ slideMenu.directive('asmPushRight', function($compile) {
         element[0].classList.add('asm');
         element[0].classList.add('asm-horizontal');
         element[0].classList.add('asm-right');
-        element[0].classList.add('asm-push-right');
+        //element[0].classList.add('asm-push-right');
       }
   };
 });
@@ -54,7 +54,24 @@ slideMenu.directive('asmWrapper', function($compile) {
       restrict: 'AEC'
     , controller: function($scope, $element, $attrs) {
         this.toggleOpen = function() {
+          console.log($attrs);
           $element[0].classList.toggle('asm-open');
+          switch($attrs.push) {
+            case 'top':
+              $element[0].classList.toggle('asm-body-push-top');
+              break;
+            case 'bottom':
+              $element[0].classList.toggle('asm-body-push-bottom');
+              break;
+            case 'left':
+              $element[0].classList.toggle('asm-body-push-left');
+              break;
+            case 'right':
+              $element[0].classList.toggle('asm-body-push-right');
+              break;
+            default:
+              break;
+          }
         };
       }
     , link: function(scope, element, attr) {

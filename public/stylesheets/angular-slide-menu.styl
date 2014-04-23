@@ -14,7 +14,7 @@ asm-vendor(prop, args)
   top 0
   left 0
   z-index 10
-  vendor('transition', all 0.3s)
+  vendor('transition', all 0.3s ease-in-out)
 
 #asm-mask
   position fixed
@@ -29,7 +29,7 @@ asm-vendor(prop, args)
   position fixed
   z-index 20
   overflow hidden
-  asm-vendor('transition', all 0.3s)
+  asm-vendor('transition', all 0.3s ease-in-out)
 
   ul
     list-style-type none
@@ -53,6 +53,10 @@ asm-vendor(prop, args)
 .asm-open .asm-left
   left 0
 
+.asm-body-push-left
+  left 300px
+  asm-vendor('transition', all 0.3s ease-in-out)
+
 // Right
 
 .asm-right
@@ -61,12 +65,6 @@ asm-vendor(prop, args)
 .asm-open .asm-right
   right 0
 
-// Push Left
-
-.asm-push-left .asm-wrapper
-  left 300px
-
-// Push Right
-
-.asm-push-right .asm-wrapper
+.asm-body-push-right
   left -300px
+  asm-vendor('transition', all 0.3s ease-in-out)
