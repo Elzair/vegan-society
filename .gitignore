@@ -14,9 +14,5 @@ results
 npm-debug.log
 node_modules
 conf/db.*.json
-*.css
 tools/vegguide-crawler/output
-public/lib
 .DS_Store
-public/images/sjjb
-public/.bundle.js
