@@ -11,6 +11,7 @@ var mapApp = angular.module('mapApp', [
   , 'filters'
   , 'interpolate'
   , 'mapControllers'
+  , 'slideMenu'
 ]);
 
 mapApp.config(['$routeProvider', '$locationProvider',

@@ -1,0 +1,72 @@
+// Common styles
+asm-vendor(prop, args)
+  -webkit-{prop} args
+  -moz-{prop} args
+  -ms-{prop} args
+  -o-{prop} args
+  {prop} args
+
+.body, .fullscreen
+  overflow-x hidden
+
+.asm-wrapper
+  position relative
+  top 0
+  left 0
+  z-index 10
+  vendor('transition', all 0.3s)
+
+#asm-mask
+  position fixed
+  top 0
+  left 0
+  z-index 15
+  width 100%
+  height 100%
+  background rgba(0,0,0,0.8)
+
+.asm
+  position fixed
+  z-index 20
+  overflow hidden
+  asm-vendor('transition', all 0.3s)
+
+  ul
+    list-style-type none
+    margin 0
+    padding 0
+    text-align center
+
+.asm-horizontal
+  top 0
+  width 300px
+  height 100%
+
+  li
+    display block
+
+// Left
+
+.asm-left
+  left -300px
+
+.asm-open .asm-left
+  left 0
+
+// Right
+
+.asm-right
+  right -300px
+
+.asm-open .asm-right
+  right 0
+
+// Push Left
+
+.asm-push-left .asm-wrapper
+  left 300px
+
+// Push Right
+
+.asm-push-right .asm-wrapper
+  left -300px

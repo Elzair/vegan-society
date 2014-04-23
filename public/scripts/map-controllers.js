@@ -2,6 +2,7 @@ var /*angular     = require('angular')
   ,*/ L           = require('leaflet')
   , bounceMarker  = require('./bouncemarker')
   , mapServices   = require('./services')
+  , slideMenu     = require('./angular-slide-menu')
   , _             = require('underscore')
   ;
 
@@ -15,6 +16,14 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
           attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">MapBox</a>',
           maxZoom: 18
       }).addTo(map);
+
+      // Add menu control to map
+      var menu = L.control({position: 'topright'});
+      menu.onAdd = function(map) {
+        this._div = L.DomUtil.create('div', 'asm-control');
+        return this._div;
+      };
+      menu.addTo(map);
 
       // Initialize list of locations
       $scope.locationIDs = [];

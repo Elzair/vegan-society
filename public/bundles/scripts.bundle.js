@@ -65,6 +65,7 @@
 	  , 'filters'
 	  , 'interpolate'
 	  , 'mapControllers'
+	  , 'slideMenu'
 	]);
 
 	mapApp.config(['$routeProvider', '$locationProvider',
@@ -143,10 +144,11 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
-	  ,*/ L           = __webpack_require__(16)
+	  ,*/ L           = __webpack_require__(17)
 	  , bounceMarker  = __webpack_require__(15)
 	  , mapServices   = __webpack_require__(14)
-	  , _             = __webpack_require__(19)
+	  , slideMenu     = __webpack_require__(16)
+	  , _             = __webpack_require__(18)
 	  ;
 
 	var mapControllers = angular.module('mapControllers', ['mapServices']);
@@ -159,6 +161,14 @@
 	          attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">MapBox</a>',
 	          maxZoom: 18
 	      }).addTo(map);
+
+	      // Add menu control to map
+	      var menu = L.control({position: 'topright'});
+	      menu.onAdd = function(map) {
+	        this._div = L.DomUtil.create('div', 'asm-control');
+	        return this._div;
+	      };
+	      menu.addTo(map);
 
 	      // Initialize list of locations
 	      $scope.locationIDs = [];
@@ -894,7 +904,7 @@
 /* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var L = __webpack_require__(16);
+	var L = __webpack_require__(17);
 	/**
 	 * Copyright (C) 2013 Maxime Hadjinlian <maxime.hadjinlian@gmail.com>
 	 * All Rights Reserved.
@@ -1088,6 +1098,89 @@
 
 /***/ },
 /* 16 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var slideMenu = angular.module('slideMenu', []);
+
+	slideMenu.directive('asmSlideLeft', function($compile) {
+	  return {
+	      restrict: 'A'
+	    , replace: true
+	    , link: function(scope, element, attr) {
+	        element[0].classList.add('asm');
+	        element[0].classList.add('asm-horizontal');
+	        element[0].classList.add('asm-left');
+	      }
+	  };
+	});
+
+	slideMenu.directive('asmSlideRight', function($compile) {
+	  return {
+	      restrict: 'A'
+	    , replace: true
+	    , link: function(scope, element, attr) {
+	      element[0].classList.add('asm');
+	      element[0].classList.add('asm-horizontal');
+	      element[0].classList.add('asm-right');
+	    }
+	  };
+	});
+
+	slideMenu.directive('asmPushLeft', function($compile) {
+	  return {
+	      restrict: 'A'
+	    , replace: true
+	    , link: function(scope, element, attr) {
+	        element[0].classList.add('asm');
+	        element[0].classList.add('asm-horizontal');
+	        element[0].classList.add('asm-left');
+	        element[0].classList.add('asm-push-left');
+	      }
+	  };
+	});
+
+	slideMenu.directive('asmPushRight', function($compile) {
+	  return {
+	      restrict: 'AEC'
+	    , link: function(scope, element, attr) {
+	        element[0].classList.add('asm');
+	        element[0].classList.add('asm-horizontal');
+	        element[0].classList.add('asm-right');
+	        element[0].classList.add('asm-push-right');
+	      }
+	  };
+	});
+
+	slideMenu.directive('asmWrapper', function($compile) {
+	  return {
+	      restrict: 'A'
+	    , replace: true
+	    , link: function(scope, element, attr) {
+	        element[0].classList.add('asm-wrapper');
+	        $compile(element.contents())(scope);
+	      }
+	  };
+	});
+
+	slideMenu.directive('asmControl', function($document, $compile) {
+	  return {
+	      restrict: 'EC'
+	    , template: '<a href="#" class="leaflet-control leaflet-control-asm"><img src="/images/menu.svg"/></a>'
+	    , link: function(scope, element, attrs) {
+	        element.find('a').bind('click', function(ev) {
+	          console.log('Hello You!');
+	          ev.preventDefault();
+	          var wrapper = $document.querySelector('.asm-wrapper');
+	          wrapper.classList.toggle('asm-open');
+	          scope.$apply();
+	        });
+	      }
+	  };
+	});
+
+
+/***/ },
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
@@ -10261,9 +10354,7 @@
 	}(window, document));
 
 /***/ },
-/* 17 */,
-/* 18 */,
-/* 19 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.6.0
