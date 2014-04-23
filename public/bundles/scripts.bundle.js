@@ -166,6 +166,7 @@
 	      var menu = L.control({position: 'topright'});
 	      menu.onAdd = function(map) {
 	        this._div = L.DomUtil.create('div', 'asm-control');
+	        this._div.innerHTML = '<img src="/images/menu.svg"/>';
 	        return this._div;
 	      };
 	      menu.addTo(map);
@@ -1156,7 +1157,6 @@
 	      restrict: 'AEC'
 	    , controller: function($scope, $element, $attrs) {
 	        this.toggleOpen = function() {
-	          console.log($attrs);
 	          $element[0].classList.toggle('asm-open');
 	          switch($attrs.push) {
 	            case 'top':
@@ -1186,15 +1186,15 @@
 
 	slideMenu.directive('asmControl', function($document, $compile) {
 	  return {
-	      restrict: 'EC'
+	      restrict: 'AEC'
 	    , require: '^asmWrapper'
-	    , template: '<a href="#" class="leaflet-control leaflet-control-asm"><img src="/images/menu.svg"/></a>'
 	    , link: function(scope, element, attrs, asmWrapperCtrl) {
+	        element[0].innerHTML = '<a href="#" class="leaflet-control leaflet-control-asm">'+element[0].innerHTML+'</a>';
 	        element.find('a').bind('click', function(ev) {
-	          console.log('Hello You!');
 	          ev.preventDefault();
 	          asmWrapperCtrl.toggleOpen();
 	        });
+	        $compile(element.contents())(scope);
 	      }
 	  };
 	});

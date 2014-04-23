@@ -21,6 +21,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
       var menu = L.control({position: 'topright'});
       menu.onAdd = function(map) {
         this._div = L.DomUtil.create('div', 'asm-control');
+        this._div.innerHTML = '<img src="/images/menu.svg"/>';
         return this._div;
       };
       menu.addTo(map);
