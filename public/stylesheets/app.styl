@@ -15,7 +15,7 @@ html, body, .fullscreen, #map
 .hidden
   display none
 
-.firstHeading
+.heading
   color green
   text-align center
 
@@ -24,7 +24,7 @@ html, body, .fullscreen, #map
   vendor('display', flexbox)
   vendor('display', flex)
 
-.entryContent
+.entry-content
   @extend .flex
   vendor('box-orient', vertical)
   vendor('box-direction', normal)
@@ -33,10 +33,10 @@ html, body, .fullscreen, #map
   vendor('flex-align', center)
   vendor('align-items', center)
 
-#address1
+#address-line-1
   margin-bottom 0
 
-#address2
+#address-line-2
   margin-top 0
 
 .description
@@ -70,9 +70,6 @@ dd
 
 .no
   color red
-
-//body
-//  vendor('transfrom', translate3d(0,0,0))
 
 #menu
   background-color rgb(83,159,61)

@@ -1,0 +1,29 @@
+<!--<div id="content">
+  <h2 id="firstHeading" class="firstHeading">[[ name ]]</h2>
+  <div id="bodyContent">
+    <p>[[ short_description ]]</p>
+    <p>[[ address1 ]] [[ address2 ]]</p>
+    <p>[[ city ]], [[ region ]], [[ country ]]</p>
+  </div>
+</div>
+<div id="side"><div id="side-table">
+    <div id="side-el">
+      <a href="/locations/[[ objectId ]]">
+        <img src="/images/right_arrow.svg" alt="More detail"/>
+      </a>
+    </div>
+  </div>
+</div>-->
+<h2 class="heading [[ popup_class ]]">[[ name ]]</h2> 
+<div class="body-content [[ popup_class ]]">
+  <div class="bodyText">
+    <p>[[ short_description ]]</p> 
+    <p id="address-line-1">
+      <span id="address1">[[ address1 ]]</span>
+      <span id="address2" data-ng-hide="address2">[[ ', ' + address2 ]]</span>
+    </p> 
+    <p id="address-line-2">[[ city ]], [[ region ]] [[ postal_code ]], [[ country ]]</p>
+    <a data-ng-href="[[ hash ]]/location/[[ _id ]]">More info</a>
+  </div>
+  <img class="popup-image" src="#" data-ng-src="[[ thumbnails[0] ]]" alt="[[ caption ]]">
+</div>

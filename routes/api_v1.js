@@ -38,6 +38,7 @@ exports.search = function *() {
   ];
   for (var i=0; i<ents.length; i++) {
     var new_entry = {};
+    // Make sure the entry object has a valid property for all the listed fields
     for (var j=0; j<fields.length; j++) {
       new_entry[fields[j]] = ents[i][fields[j]] || '';
     }

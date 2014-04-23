@@ -97,7 +97,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
-	  , */carousel       = __webpack_require__(13)
+	  , */carousel       = __webpack_require__(16)
 	  , mapServices   = __webpack_require__(14)
 	  ;
 
@@ -145,9 +145,9 @@
 
 	var /*angular     = require('angular')
 	  ,*/ L           = __webpack_require__(17)
-	  , bounceMarker  = __webpack_require__(15)
+	  , bounceMarker  = __webpack_require__(13)
 	  , mapServices   = __webpack_require__(14)
-	  , slideMenu     = __webpack_require__(16)
+	  , slideMenu     = __webpack_require__(15)
 	  , _             = __webpack_require__(18)
 	  ;
 
@@ -175,7 +175,7 @@
 	      $scope.locationIDs = [];
 
 	      // Initialize popup template
-	      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading <%= popup_class %>\"><%= name %></h2> <div class=\"bodyContent <%= popup_class %>\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/location/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
+	      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading <%= popup_class %>\"><%= name %></h2> <div class=\"bodyContent <%= popup_class %>\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address-line-1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address-line-2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/location/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
 
 	      function find_nearby_locations(lat, lng) {
 	        // Use 64 pixels for a retina display and 32 pixels otherwise
@@ -293,8 +293,6 @@
 	                  marker = otherMarker;
 	                  break;
 	              }
-
-	              console.log(loc);
 	              L.marker(coords, {bounceOnAdd: true, icon: marker}).addTo(map)
 	                .bindPopup(template(loc));
 	            }
@@ -311,8 +309,6 @@
 	      map.on('locationfound', function (e) {
 	        var cradius = e.accuracy / 2;
 	        var cmradius = (window.devicePixelRation > 1) ? 16 : 18;
-	        // Set default image path so Leaflet will show default marker
-	        //L.Icon.Default.imagePath = '/images';
 	        L.circle(e.latlng, cradius).addTo(map);
 	        L.circleMarker(e.latlng, cmradius).addTo(map);
 
@@ -339,6 +335,346 @@
 /* 11 */,
 /* 12 */,
 /* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var L = __webpack_require__(17);
+	/**
+	 * Copyright (C) 2013 Maxime Hadjinlian <maxime.hadjinlian@gmail.com>
+	 * All Rights Reserved.
+	 *
+	 * Redistribution and use in source and binary forms, with or without
+	 * modification, are permitted provided that the following conditions are met:
+	 *
+	 * - Redistributions of source code must retain the above copyright notice,
+	 *   this list of conditions and the following disclaimer.
+	 *
+	 * - Redistributions in binary form must reproduce the above copyright notice,
+	 *   this list of conditions and the following disclaimer in the documentation
+	 *   and/or other materials provided with the distribution.
+	 *
+	 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+	 * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+	 * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+	 * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+	 * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+	 * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+	 * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+	 * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+	 * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+	 * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+	 * POSSIBILITY OF SUCH DAMAGE.
+	 */
+
+	(function () {
+
+	  // Retain the value of the original onAdd and onRemove functions
+	  var originalOnAdd = L.Marker.prototype.onAdd;
+	  var originalOnRemove = L.Marker.prototype.onRemove;
+
+	  // Add bounceonAdd options
+	  L.Marker.mergeOptions({
+	    bounceOnAdd: false,
+	    bounceOnAddOptions: {
+	      duration: 1000,
+	      height: -1
+	    },
+	    bounceOnAddCallback: function() {},
+	  });
+
+	  L.Marker.include({
+
+	    _toPoint: function (latlng) {
+	      return this._map.latLngToContainerPoint(latlng);
+	    },
+	    _toLatLng: function (point) {
+	      return this._map.containerPointToLatLng(point);
+	    },
+
+	    _motionStep: function (opts) {
+	      var self = this;
+
+	      var start = new Date();
+	      self._intervalId = setInterval(function () {
+	        var timePassed = new Date() - start;
+	        var progress = timePassed / opts.duration;
+	        if (progress > 1) {
+	          progress = 1;
+	        }
+	        var delta = opts.delta(progress);
+	        opts.step(delta);
+	        if (progress === 1) {
+	          opts.end();
+	          clearInterval(self._intervalId);
+	        }
+	      }, opts.delay || 10);
+	    },
+
+	    _bounceMotion: function (delta, duration, callback) {
+	      var original = L.latLng(this._origLatlng),
+	          start_y = this._dropPoint.y,
+	          start_x = this._dropPoint.x,
+	          distance = this._point.y - start_y;
+	      var self = this;
+
+	      this._motionStep({
+	        delay: 10,
+	        duration: duration || 1000, // 1 sec by default
+	        delta: delta,
+	        step: function (delta) {
+	          self._dropPoint.y =
+	            start_y
+	            + (distance * delta)
+	            - (self._map.project(self._map.getCenter()).y - self._origMapCenter.y);
+	          self._dropPoint.x =
+	            start_x
+	            - (self._map.project(self._map.getCenter()).x - self._origMapCenter.x);
+	          self.setLatLng(self._toLatLng(self._dropPoint));
+	        },
+	        end: function () {
+	          self.setLatLng(original);
+	          if (typeof callback === "function") callback();
+	        }
+	      });
+	    },
+
+	    // Many thanks to Robert Penner for this function
+	    _easeOutBounce: function (pos) {
+	      if ((pos) < (1 / 2.75)) {
+	        return (7.5625 * pos * pos);
+	      } else if (pos < (2 / 2.75)) {
+	        return (7.5625 * (pos -= (1.5 / 2.75)) * pos + 0.75);
+	      } else if (pos < (2.5 / 2.75)) {
+	        return (7.5625 * (pos -= (2.25 / 2.75)) * pos + 0.9375);
+	      } else {
+	        return (7.5625 * (pos -= (2.625 / 2.75)) * pos + 0.984375);
+	      }
+	    },
+
+	    // Bounce : if options.height in pixels is not specified, drop from top.
+	    // If options.duration is not specified animation is 1s long.
+	    bounce: function(options, endCallback) {
+	       this._origLatlng = this.getLatLng();
+	       this._bounce(options, endCallback);
+	    },
+
+	    _bounce: function (options, endCallback) {
+	      if (typeof options === "function") {
+	          endCallback = options;
+	          options = null;
+	      }
+	      options = options || {duration: 1000, height: -1};
+
+	      //backward compatibility
+	      if (typeof options === "number") {
+	        options.duration = arguments[0];
+	        options.height = arguments[1];
+	      }
+
+	      // Keep original map center
+	      this._origMapCenter = this._map.project(this._map.getCenter());
+	      this._dropPoint = this._getDropPoint(options.height);
+	      this._bounceMotion(this._easeOutBounce, options.duration, endCallback);
+	    },
+
+	    // This will get you a drop point given a height.
+	    // If no height is given, the top y will be used.
+	    _getDropPoint: function (height) {
+	      // Get current coordidates in pixel
+	      this._point = this._toPoint(this._origLatlng);
+	      var top_y;
+	      if (height === undefined || height < 0) {
+	        top_y = this._toPoint(this._map.getBounds()._northEast).y;
+	      } else {
+	        top_y = this._point.y - height;
+	      }
+	      return new L.Point(this._point.x, top_y);
+	    },
+
+	    onAdd: function (map) {
+	      this._map = map;
+	      // Keep original latitude and longitude
+	      this._origLatlng = this._latlng;
+
+	      // We need to have our drop point BEFORE adding the marker to the map
+	      // otherwise, it would create a flicker. (The marker would appear at final
+	      // location then move to its drop location, and you may be able to see it.)
+	      if (this.options.bounceOnAdd === true) {
+	        // backward compatibility
+	        if (typeof this.options.bounceOnAddDuration !== 'undefined') {
+	          this.options.bounceOnAddOptions.duration = this.options.bounceOnAddDuration;
+	        }
+
+	        // backward compatibility
+	        if (typeof this.options.bounceOnAddHeight !== 'undefined') {
+	          this.options.bounceOnAddOptions.height = this.options.bounceOnAddHeight;
+	        }
+
+	        this._dropPoint = this._getDropPoint(this.options.bounceOnAddOptions.height);
+	        this.setLatLng(this._toLatLng(this._dropPoint));
+	      }
+
+	      // Call leaflet original method to add the Marker to the map.
+	      originalOnAdd.call(this, map);
+
+	      if (this.options.bounceOnAdd === true) {
+	        this._bounce(this.options.bounceOnAddOptions, this.options.bounceOnAddCallback);
+	      }
+	    },
+
+	    onRemove: function (map) {
+	      clearInterval(this._intervalId);
+	      originalOnRemove.call(this, map);
+	    }
+	  });
+	})();
+
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	//var angular = require('angular');
+
+	var mapServices = angular.module('mapServices', ['ngResource']);
+
+	mapServices.factory('Locations', ['$resource', 
+	    function($resource) {
+	      var host = document.querySelector("#host").innerHTML;
+	      console.log(host);
+	      return $resource('http://' + host + '/api/v1/search?lat=:lat&lng=:lng', {}, {
+	        search: {method: 'GET', responseType: 'json', isArray: true}
+	      });
+	    }
+	]);
+
+	mapServices.factory('LocationInfo', ['$resource',
+	    function($resource) {
+	      var host = document.querySelector("#host").innerHTML;
+	      console.log(host);
+	      return $resource('http://' + host + '/api/v1/location/:id', {}, {
+	        get: {method: 'GET', responseType: 'json'}
+	      });
+	    }
+	]);
+
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var slideMenu = angular.module('slideMenu', []);
+
+	slideMenu.directive('asmSlideLeft', function($compile) {
+	  return {
+	      restrict: 'AEC'
+	    , replace: true
+	    , link: function(scope, element, attr) {
+	        element[0].classList.add('asm');
+	        element[0].classList.add('asm-horizontal');
+	        element[0].classList.add('asm-left');
+	      }
+	  };
+	});
+
+	slideMenu.directive('asmSlideRight', function($compile) {
+	  return {
+	      restrict: 'AEC'
+	    , replace: true
+	    , link: function(scope, element, attr) {
+	      element[0].classList.add('asm');
+	      element[0].classList.add('asm-horizontal');
+	      element[0].classList.add('asm-right');
+	    }
+	  };
+	});
+
+	slideMenu.directive('asmPushLeft', function($compile) {
+	  return {
+	      restrict: 'AEC'
+	    , replace: true
+	    , link: function(scope, element, attr) {
+	        element[0].classList.add('asm');
+	        element[0].classList.add('asm-horizontal');
+	        element[0].classList.add('asm-left');
+	      }
+	  };
+	});
+
+	slideMenu.directive('asmPushRight', function($compile) {
+	  return {
+	      restrict: 'AEC'
+	    , link: function(scope, element, attr) {
+	        element[0].classList.add('asm');
+	        element[0].classList.add('asm-horizontal');
+	        element[0].classList.add('asm-right');
+	      }
+	  };
+	});
+
+	slideMenu.directive('asmWrapper', function($compile, $document) {
+	  return {
+	      restrict: 'AEC'
+	    , controller: function($scope, $element, $attrs) {
+	        this.toggleOpen = function() {
+	          console.log($document);
+	          $element[0].classList.toggle('asm-open');
+	          $element[0].classList.toggle('asm-closed');
+	          switch($attrs.push) {
+	            case 'top':
+	              $element[0].classList.toggle('asm-body-push-top');
+	              break;
+	            case 'bottom':
+	              $element[0].classList.toggle('asm-body-push-bottom');
+	              break;
+	            case 'left':
+	              $element[0].classList.toggle('asm-body-push-left');
+	              break;
+	            case 'right':
+	              $element[0].classList.toggle('asm-body-push-right');
+	              break;
+	            default:
+	              break;
+	          }
+	          // Create or destroy asm-mask
+	          if ($attrs.mask) {
+	            var mask = $document[0].getElementById('asm-mask');
+	            if (mask) {
+	              $element[0].removeChild(mask);
+	            }
+	            else {
+	              mask = $document[0].createElement('div');
+	              mask.setAttribute('id', 'asm-mask');
+	              $element[0].appendChild(mask);
+	            }
+	          }
+	        };
+	      }
+	    , link: function(scope, element, attr) {
+	        element[0].classList.add('asm-wrapper');
+	        element[0].classList.add('asm-closed');
+	        $compile(element.contents())(scope);
+	      }
+	  };
+	});
+
+	slideMenu.directive('asmControl', function($document, $compile) {
+	  return {
+	      restrict: 'AEC'
+	    , require: '^asmWrapper'
+	    , link: function(scope, element, attrs, asmWrapperCtrl) {
+	        element[0].innerHTML = '<a href="#">'+element[0].innerHTML+'</a>';
+	        element.find('a').bind('click', function(ev) {
+	          ev.preventDefault();
+	          asmWrapperCtrl.toggleOpen();
+	        });
+	        $compile(element.contents())(scope);
+	      }
+	  };
+	});
+
+
+/***/ },
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -870,346 +1206,6 @@
 	    });
 
 	})();
-
-
-/***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
-
-	//var angular = require('angular');
-
-	var mapServices = angular.module('mapServices', ['ngResource']);
-
-	mapServices.factory('Locations', ['$resource', 
-	    function($resource) {
-	      var host = document.querySelector("#host").innerHTML;
-	      console.log(host);
-	      return $resource('http://' + host + '/api/v1/search?lat=:lat&lng=:lng', {}, {
-	        search: {method: 'GET', responseType: 'json', isArray: true}
-	      });
-	    }
-	]);
-
-	mapServices.factory('LocationInfo', ['$resource',
-	    function($resource) {
-	      var host = document.querySelector("#host").innerHTML;
-	      console.log(host);
-	      return $resource('http://' + host + '/api/v1/location/:id', {}, {
-	        get: {method: 'GET', responseType: 'json'}
-	      });
-	    }
-	]);
-
-
-/***/ },
-/* 15 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var L = __webpack_require__(17);
-	/**
-	 * Copyright (C) 2013 Maxime Hadjinlian <maxime.hadjinlian@gmail.com>
-	 * All Rights Reserved.
-	 *
-	 * Redistribution and use in source and binary forms, with or without
-	 * modification, are permitted provided that the following conditions are met:
-	 *
-	 * - Redistributions of source code must retain the above copyright notice,
-	 *   this list of conditions and the following disclaimer.
-	 *
-	 * - Redistributions in binary form must reproduce the above copyright notice,
-	 *   this list of conditions and the following disclaimer in the documentation
-	 *   and/or other materials provided with the distribution.
-	 *
-	 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-	 * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-	 * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-	 * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-	 * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-	 * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-	 * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-	 * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-	 * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-	 * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-	 * POSSIBILITY OF SUCH DAMAGE.
-	 */
-
-	(function () {
-
-	  // Retain the value of the original onAdd and onRemove functions
-	  var originalOnAdd = L.Marker.prototype.onAdd;
-	  var originalOnRemove = L.Marker.prototype.onRemove;
-
-	  // Add bounceonAdd options
-	  L.Marker.mergeOptions({
-	    bounceOnAdd: false,
-	    bounceOnAddOptions: {
-	      duration: 1000,
-	      height: -1
-	    },
-	    bounceOnAddCallback: function() {},
-	  });
-
-	  L.Marker.include({
-
-	    _toPoint: function (latlng) {
-	      return this._map.latLngToContainerPoint(latlng);
-	    },
-	    _toLatLng: function (point) {
-	      return this._map.containerPointToLatLng(point);
-	    },
-
-	    _motionStep: function (opts) {
-	      var self = this;
-
-	      var start = new Date();
-	      self._intervalId = setInterval(function () {
-	        var timePassed = new Date() - start;
-	        var progress = timePassed / opts.duration;
-	        if (progress > 1) {
-	          progress = 1;
-	        }
-	        var delta = opts.delta(progress);
-	        opts.step(delta);
-	        if (progress === 1) {
-	          opts.end();
-	          clearInterval(self._intervalId);
-	        }
-	      }, opts.delay || 10);
-	    },
-
-	    _bounceMotion: function (delta, duration, callback) {
-	      var original = L.latLng(this._origLatlng),
-	          start_y = this._dropPoint.y,
-	          start_x = this._dropPoint.x,
-	          distance = this._point.y - start_y;
-	      var self = this;
-
-	      this._motionStep({
-	        delay: 10,
-	        duration: duration || 1000, // 1 sec by default
-	        delta: delta,
-	        step: function (delta) {
-	          self._dropPoint.y =
-	            start_y
-	            + (distance * delta)
-	            - (self._map.project(self._map.getCenter()).y - self._origMapCenter.y);
-	          self._dropPoint.x =
-	            start_x
-	            - (self._map.project(self._map.getCenter()).x - self._origMapCenter.x);
-	          self.setLatLng(self._toLatLng(self._dropPoint));
-	        },
-	        end: function () {
-	          self.setLatLng(original);
-	          if (typeof callback === "function") callback();
-	        }
-	      });
-	    },
-
-	    // Many thanks to Robert Penner for this function
-	    _easeOutBounce: function (pos) {
-	      if ((pos) < (1 / 2.75)) {
-	        return (7.5625 * pos * pos);
-	      } else if (pos < (2 / 2.75)) {
-	        return (7.5625 * (pos -= (1.5 / 2.75)) * pos + 0.75);
-	      } else if (pos < (2.5 / 2.75)) {
-	        return (7.5625 * (pos -= (2.25 / 2.75)) * pos + 0.9375);
-	      } else {
-	        return (7.5625 * (pos -= (2.625 / 2.75)) * pos + 0.984375);
-	      }
-	    },
-
-	    // Bounce : if options.height in pixels is not specified, drop from top.
-	    // If options.duration is not specified animation is 1s long.
-	    bounce: function(options, endCallback) {
-	       this._origLatlng = this.getLatLng();
-	       this._bounce(options, endCallback);
-	    },
-
-	    _bounce: function (options, endCallback) {
-	      if (typeof options === "function") {
-	          endCallback = options;
-	          options = null;
-	      }
-	      options = options || {duration: 1000, height: -1};
-
-	      //backward compatibility
-	      if (typeof options === "number") {
-	        options.duration = arguments[0];
-	        options.height = arguments[1];
-	      }
-
-	      // Keep original map center
-	      this._origMapCenter = this._map.project(this._map.getCenter());
-	      this._dropPoint = this._getDropPoint(options.height);
-	      this._bounceMotion(this._easeOutBounce, options.duration, endCallback);
-	    },
-
-	    // This will get you a drop point given a height.
-	    // If no height is given, the top y will be used.
-	    _getDropPoint: function (height) {
-	      // Get current coordidates in pixel
-	      this._point = this._toPoint(this._origLatlng);
-	      var top_y;
-	      if (height === undefined || height < 0) {
-	        top_y = this._toPoint(this._map.getBounds()._northEast).y;
-	      } else {
-	        top_y = this._point.y - height;
-	      }
-	      return new L.Point(this._point.x, top_y);
-	    },
-
-	    onAdd: function (map) {
-	      this._map = map;
-	      // Keep original latitude and longitude
-	      this._origLatlng = this._latlng;
-
-	      // We need to have our drop point BEFORE adding the marker to the map
-	      // otherwise, it would create a flicker. (The marker would appear at final
-	      // location then move to its drop location, and you may be able to see it.)
-	      if (this.options.bounceOnAdd === true) {
-	        // backward compatibility
-	        if (typeof this.options.bounceOnAddDuration !== 'undefined') {
-	          this.options.bounceOnAddOptions.duration = this.options.bounceOnAddDuration;
-	        }
-
-	        // backward compatibility
-	        if (typeof this.options.bounceOnAddHeight !== 'undefined') {
-	          this.options.bounceOnAddOptions.height = this.options.bounceOnAddHeight;
-	        }
-
-	        this._dropPoint = this._getDropPoint(this.options.bounceOnAddOptions.height);
-	        this.setLatLng(this._toLatLng(this._dropPoint));
-	      }
-
-	      // Call leaflet original method to add the Marker to the map.
-	      originalOnAdd.call(this, map);
-
-	      if (this.options.bounceOnAdd === true) {
-	        this._bounce(this.options.bounceOnAddOptions, this.options.bounceOnAddCallback);
-	      }
-	    },
-
-	    onRemove: function (map) {
-	      clearInterval(this._intervalId);
-	      originalOnRemove.call(this, map);
-	    }
-	  });
-	})();
-
-
-/***/ },
-/* 16 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var slideMenu = angular.module('slideMenu', []);
-
-	slideMenu.directive('asmSlideLeft', function($compile) {
-	  return {
-	      restrict: 'AEC'
-	    , replace: true
-	    , link: function(scope, element, attr) {
-	        element[0].classList.add('asm');
-	        element[0].classList.add('asm-horizontal');
-	        element[0].classList.add('asm-left');
-	      }
-	  };
-	});
-
-	slideMenu.directive('asmSlideRight', function($compile) {
-	  return {
-	      restrict: 'AEC'
-	    , replace: true
-	    , link: function(scope, element, attr) {
-	      element[0].classList.add('asm');
-	      element[0].classList.add('asm-horizontal');
-	      element[0].classList.add('asm-right');
-	    }
-	  };
-	});
-
-	slideMenu.directive('asmPushLeft', function($compile) {
-	  return {
-	      restrict: 'AEC'
-	    , replace: true
-	    , link: function(scope, element, attr) {
-	        element[0].classList.add('asm');
-	        element[0].classList.add('asm-horizontal');
-	        element[0].classList.add('asm-left');
-	      }
-	  };
-	});
-
-	slideMenu.directive('asmPushRight', function($compile) {
-	  return {
-	      restrict: 'AEC'
-	    , link: function(scope, element, attr) {
-	        element[0].classList.add('asm');
-	        element[0].classList.add('asm-horizontal');
-	        element[0].classList.add('asm-right');
-	      }
-	  };
-	});
-
-	slideMenu.directive('asmWrapper', function($compile, $document) {
-	  return {
-	      restrict: 'AEC'
-	    , controller: function($scope, $element, $attrs) {
-	        this.toggleOpen = function() {
-	          console.log($document);
-	          $element[0].classList.toggle('asm-open');
-	          $element[0].classList.toggle('asm-closed');
-	          switch($attrs.push) {
-	            case 'top':
-	              $element[0].classList.toggle('asm-body-push-top');
-	              break;
-	            case 'bottom':
-	              $element[0].classList.toggle('asm-body-push-bottom');
-	              break;
-	            case 'left':
-	              $element[0].classList.toggle('asm-body-push-left');
-	              break;
-	            case 'right':
-	              $element[0].classList.toggle('asm-body-push-right');
-	              break;
-	            default:
-	              break;
-	          }
-	          // Create or destroy asm-mask
-	          if ($attrs.mask) {
-	            var mask = $document[0].getElementById('asm-mask');
-	            if (mask) {
-	              $element[0].removeChild(mask);
-	            }
-	            else {
-	              mask = $document[0].createElement('div');
-	              mask.setAttribute('id', 'asm-mask');
-	              $element[0].appendChild(mask);
-	            }
-	          }
-	        };
-	      }
-	    , link: function(scope, element, attr) {
-	        element[0].classList.add('asm-wrapper');
-	        element[0].classList.add('asm-closed');
-	        $compile(element.contents())(scope);
-	      }
-	  };
-	});
-
-	slideMenu.directive('asmControl', function($document, $compile) {
-	  return {
-	      restrict: 'AEC'
-	    , require: '^asmWrapper'
-	    , link: function(scope, element, attrs, asmWrapperCtrl) {
-	        element[0].innerHTML = '<a href="#">'+element[0].innerHTML+'</a>';
-	        element.find('a').bind('click', function(ev) {
-	          ev.preventDefault();
-	          asmWrapperCtrl.toggleOpen();
-	        });
-	        $compile(element.contents())(scope);
-	      }
-	  };
-	});
 
 
 /***/ },
