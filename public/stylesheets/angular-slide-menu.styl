@@ -45,6 +45,10 @@ asm-vendor(prop, args)
   li
     display block
 
+.asm-closed
+  left 0
+  asm-vendor('transition', all 0.3s ease-in-out)
+
 // Left
 
 .asm-left
@@ -52,10 +56,6 @@ asm-vendor(prop, args)
 
 .asm-open .asm-left
   left 0
-
-.asm-body-push-left
-  left 300px
-  asm-vendor('transition', all 0.3s ease-in-out)
 
 // Right
 

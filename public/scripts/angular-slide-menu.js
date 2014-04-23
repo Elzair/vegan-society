@@ -76,6 +76,7 @@ slideMenu.directive('asmWrapper', function($compile) {
       }
     , link: function(scope, element, attr) {
         element[0].classList.add('asm-wrapper');
+        element[0].classList.add('asm-closed');
         $compile(element.contents())(scope);
       }
   };
