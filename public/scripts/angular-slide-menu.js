@@ -2,7 +2,7 @@ var slideMenu = angular.module('slideMenu', []);
 
 slideMenu.directive('asmSlideLeft', function($compile) {
   return {
-      restrict: 'A'
+      restrict: 'AEC'
     , replace: true
     , link: function(scope, element, attr) {
         element[0].classList.add('asm');
@@ -14,7 +14,7 @@ slideMenu.directive('asmSlideLeft', function($compile) {
 
 slideMenu.directive('asmSlideRight', function($compile) {
   return {
-      restrict: 'A'
+      restrict: 'AEC'
     , replace: true
     , link: function(scope, element, attr) {
       element[0].classList.add('asm');
@@ -26,7 +26,7 @@ slideMenu.directive('asmSlideRight', function($compile) {
 
 slideMenu.directive('asmPushLeft', function($compile) {
   return {
-      restrict: 'A'
+      restrict: 'AEC'
     , replace: true
     , link: function(scope, element, attr) {
         element[0].classList.add('asm');
@@ -51,8 +51,12 @@ slideMenu.directive('asmPushRight', function($compile) {
 
 slideMenu.directive('asmWrapper', function($compile) {
   return {
-      restrict: 'A'
-    , replace: true
+      restrict: 'AEC'
+    , controller: function($scope, $element, $attrs) {
+        this.toggleOpen = function() {
+          $element[0].classList.toggle('asm-open');
+        };
+      }
     , link: function(scope, element, attr) {
         element[0].classList.add('asm-wrapper');
         $compile(element.contents())(scope);
@@ -63,14 +67,13 @@ slideMenu.directive('asmWrapper', function($compile) {
 slideMenu.directive('asmControl', function($document, $compile) {
   return {
       restrict: 'EC'
+    , require: '^asmWrapper'
     , template: '<a href="#" class="leaflet-control leaflet-control-asm"><img src="/images/menu.svg"/></a>'
-    , link: function(scope, element, attrs) {
+    , link: function(scope, element, attrs, asmWrapperCtrl) {
         element.find('a').bind('click', function(ev) {
           console.log('Hello You!');
           ev.preventDefault();
-          var wrapper = $document.querySelector('.asm-wrapper');
-          wrapper.classList.toggle('asm-open');
-          scope.$apply();
+          asmWrapperCtrl.toggleOpen();
         });
       }
   };
