@@ -1,12 +1,15 @@
 var /*angular     = require('angular')
-  ,*/ L           = require('leaflet')
-  , bounceMarker  = require('./bouncemarker')
+  ,*/bounceMarker   = require('./bouncemarker')
+  //, directives    = require('./directives')
+  , L             = require('leaflet')
   , mapServices   = require('./services')
-  , slideMenu     = require('./angular-slide-menu')
   , _             = require('underscore')
   ;
 
-var mapControllers = angular.module('mapControllers', ['mapServices']);
+var mapControllers = angular.module('mapControllers', [
+  /*  'directives'
+  , */'mapServices'
+]);
 
 mapControllers.controller('MapCtrl', ['$scope', 'Locations',
     function($scope, Locations) {
@@ -27,10 +30,10 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
       menu.addTo(map);
 
       // Initialize list of locations
-      $scope.locationIDs = [];
+      $scope.locations = [];
 
       // Initialize popup template
-      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading <%= popup_class %>\"><%= name %></h2> <div class=\"bodyContent <%= popup_class %>\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address-line-1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address-line-2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/location/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
+      var template = _.template("<h2 class=\"heading <%= popup_class %>\"><%= name %></h2> <div class=\"body-content <%= popup_class %>\"><div class=\"body-text\"><p><%= short_description %></p> <p id=\"address-line-1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address-line-2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/location/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
 
       function find_nearby_locations(lat, lng) {
         // Use 64 pixels for a retina display and 32 pixels otherwise
@@ -94,16 +97,13 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
           locations.forEach(function(loc, index, array) {
             // Avoid adding the same location twice
             var duplicate = false;
-            for (var i=0; i<$scope.locationIDs.length; i++) {
-              if ($scope.locationIDs[i] === loc._id) {
+            for (var i=0; i<$scope.locations.length; i++) {
+              if ($scope.locations[i]._id === loc._id) {
                 duplicate = true;
                 break;
               }
             }
             if (!duplicate) {
-              // Push location ID to array
-              $scope.locationIDs.push(loc._id);
-
               // Set all entry URLs to begin with '/#' if browser does not support HTML5 History API
               loc.hash = (window.history && window.history.pushState) ? '' : '/#';
 
@@ -148,7 +148,12 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
                   marker = otherMarker;
                   break;
               }
-              L.marker(coords, {bounceOnAdd: true, icon: marker}).addTo(map)
+
+              // Push location to array
+              $scope.locations.push(loc);
+
+              L.marker(coords, {bounceOnAdd: true, icon: marker})
+                .addTo(map)
                 .bindPopup(template(loc));
             }
           });

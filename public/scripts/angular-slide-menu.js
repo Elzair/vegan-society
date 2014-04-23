@@ -52,7 +52,6 @@ slideMenu.directive('asmWrapper', function($compile, $document) {
       restrict: 'AEC'
     , controller: function($scope, $element, $attrs) {
         this.toggleOpen = function() {
-          console.log($document);
           $element[0].classList.toggle('asm-open');
           $element[0].classList.toggle('asm-closed');
           switch($attrs.push) {

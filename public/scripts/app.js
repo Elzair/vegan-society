@@ -1,12 +1,15 @@
-var /*angular        = require('angular')
-  , */entryControllers = require('./entry-controllers')
-  , filters        = require('./filters')
-  , interpolate    = require('./interpolate')
-  , mapControllers = require('./map-controllers')
+var /*angular          = require('angular')
+  , */directives       = require('./directives')
+  , entryControllers = require('./entry-controllers')
+  , filters          = require('./filters')
+  , interpolate      = require('./interpolate')
+  , mapControllers   = require('./map-controllers')
+  , slideMenu        = require('./angular-slide-menu')
   ;
 
 var mapApp = angular.module('mapApp', [
     'ngRoute'
+  , 'directives'
   , 'entryControllers'
   , 'filters'
   , 'interpolate'

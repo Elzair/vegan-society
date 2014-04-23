@@ -52,15 +52,18 @@
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var /*angular        = require('angular')
-	  , */entryControllers = __webpack_require__(2)
-	  , filters        = __webpack_require__(3)
-	  , interpolate    = __webpack_require__(4)
-	  , mapControllers = __webpack_require__(5)
+	var /*angular          = require('angular')
+	  , */directives       = __webpack_require__(21)
+	  , entryControllers = __webpack_require__(2)
+	  , filters          = __webpack_require__(3)
+	  , interpolate      = __webpack_require__(4)
+	  , mapControllers   = __webpack_require__(5)
+	  , slideMenu        = __webpack_require__(15)
 	  ;
 
 	var mapApp = angular.module('mapApp', [
 	    'ngRoute'
+	  , 'directives'
 	  , 'entryControllers'
 	  , 'filters'
 	  , 'interpolate'
@@ -144,14 +147,17 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
-	  ,*/ L           = __webpack_require__(17)
-	  , bounceMarker  = __webpack_require__(13)
+	  ,*/bounceMarker   = __webpack_require__(13)
+	  //, directives    = require('./directives')
+	  , L             = __webpack_require__(17)
 	  , mapServices   = __webpack_require__(14)
-	  , slideMenu     = __webpack_require__(15)
 	  , _             = __webpack_require__(18)
 	  ;
 
-	var mapControllers = angular.module('mapControllers', ['mapServices']);
+	var mapControllers = angular.module('mapControllers', [
+	  /*  'directives'
+	  , */'mapServices'
+	]);
 
 	mapControllers.controller('MapCtrl', ['$scope', 'Locations',
 	    function($scope, Locations) {
@@ -172,10 +178,10 @@
 	      menu.addTo(map);
 
 	      // Initialize list of locations
-	      $scope.locationIDs = [];
+	      $scope.locations = [];
 
 	      // Initialize popup template
-	      var template = _.template("<h2 id=\"firstHeading\" class=\"firstHeading <%= popup_class %>\"><%= name %></h2> <div class=\"bodyContent <%= popup_class %>\"><div class=\"bodyText\"><p><%= short_description %></p> <p id=\"address-line-1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address-line-2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/location/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
+	      var template = _.template("<h2 class=\"heading <%= popup_class %>\"><%= name %></h2> <div class=\"body-content <%= popup_class %>\"><div class=\"body-text\"><p><%= short_description %></p> <p id=\"address-line-1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address-line-2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/location/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
 
 	      function find_nearby_locations(lat, lng) {
 	        // Use 64 pixels for a retina display and 32 pixels otherwise
@@ -239,16 +245,13 @@
 	          locations.forEach(function(loc, index, array) {
 	            // Avoid adding the same location twice
 	            var duplicate = false;
-	            for (var i=0; i<$scope.locationIDs.length; i++) {
-	              if ($scope.locationIDs[i] === loc._id) {
+	            for (var i=0; i<$scope.locations.length; i++) {
+	              if ($scope.locations[i]._id === loc._id) {
 	                duplicate = true;
 	                break;
 	              }
 	            }
 	            if (!duplicate) {
-	              // Push location ID to array
-	              $scope.locationIDs.push(loc._id);
-
 	              // Set all entry URLs to begin with '/#' if browser does not support HTML5 History API
 	              loc.hash = (window.history && window.history.pushState) ? '' : '/#';
 
@@ -293,7 +296,12 @@
 	                  marker = otherMarker;
 	                  break;
 	              }
-	              L.marker(coords, {bounceOnAdd: true, icon: marker}).addTo(map)
+
+	              // Push location to array
+	              $scope.locations.push(loc);
+
+	              L.marker(coords, {bounceOnAdd: true, icon: marker})
+	                .addTo(map)
 	                .bindPopup(template(loc));
 	            }
 	          });
@@ -616,7 +624,6 @@
 	      restrict: 'AEC'
 	    , controller: function($scope, $element, $attrs) {
 	        this.toggleOpen = function() {
-	          console.log($document);
 	          $element[0].classList.toggle('asm-open');
 	          $element[0].classList.toggle('asm-closed');
 	          switch($attrs.push) {
@@ -11729,6 +11736,28 @@
 	    }.apply(null, __WEBPACK_AMD_DEFINE_ARRAY__)), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	  }
 	}).call(this);
+
+
+/***/ },
+/* 19 */,
+/* 20 */,
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var directives = angular.module('directives', []);
+
+	directives.directive('vsPopup', function($compile) {
+	  return {
+	      restrict: 'AEC'
+	    , templateUrl: '/templates/popup.html'
+	    , link: function(scope, element, attr) {
+	        console.log(attr);
+	        var loc_id = parseInt(attr.location, 10);
+	        scope.info = scope.locations[loc_id];
+	        $compile(element.contents())(scope);
+	      }
+	  };
+	});
 
 
 /***/ }

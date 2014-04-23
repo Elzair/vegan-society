@@ -14,16 +14,16 @@
     </div>
   </div>
 </div>-->
-<h2 class="heading [[ popup_class ]]">[[ name ]]</h2> 
-<div class="body-content [[ popup_class ]]">
-  <div class="bodyText">
-    <p>[[ short_description ]]</p> 
+<h2 class="heading [[ info.popup_class ]]">[[ name ]]</h2> 
+<div class="body-content [[ info.popup_class ]]">
+  <div class="body-text">
+    <p>[[ info.short_description ]]</p> 
     <p id="address-line-1">
-      <span id="address1">[[ address1 ]]</span>
-      <span id="address2" data-ng-hide="address2">[[ ', ' + address2 ]]</span>
+      <span id="address1">[[ info.address1 ]]</span>
+      <span id="address2" data-ng-hide="address2">[[ , info.address2 ]]</span>
     </p> 
-    <p id="address-line-2">[[ city ]], [[ region ]] [[ postal_code ]], [[ country ]]</p>
-    <a data-ng-href="[[ hash ]]/location/[[ _id ]]">More info</a>
+    <p id="address-line-2">[[ info.city ]], [[ info.region ]] [[ info.postal_code ]], [[ info.country ]]</p>
+    <a data-ng-href="[[ info.hash ]]/location/[[ info._id ]]">More info</a>
   </div>
-  <img class="popup-image" src="#" data-ng-src="[[ thumbnails[0] ]]" alt="[[ caption ]]">
+  <img class="popup-image" src="#" data-ng-src="[[ info.thumbnails[0] ]]" alt="[[ info.caption ]]">
 </div>
