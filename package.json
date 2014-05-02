@@ -1,6 +1,6 @@
 {
   "name": "vegan-society",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "description": "Web App to grow the Vegan community",
   "main": "app.js",
   "scripts": {
@@ -41,7 +41,8 @@
     "angular": "~1.2.15",
     "leaflet": "~0.7.2",
     "underscore": "~1.6.0",
-    "haversine": "0.0.4"
+    "haversine": "0.0.4",
+    "angular-slide-menu": "~0.4.3"
   },
   "devDependencies": {
     "gulp": "~3.5.6",

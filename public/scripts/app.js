@@ -4,7 +4,7 @@ var /*angular          = require('angular')
   , filters          = require('./filters')
   , interpolate      = require('./interpolate')
   , mapControllers   = require('./map-controllers')
-  , slideMenu        = require('./angular-slide-menu')
+  , slideMenu        = require('angular-slide-menu')
   ;
 
 var mapApp = angular.module('mapApp', [
