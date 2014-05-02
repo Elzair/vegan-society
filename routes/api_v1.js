@@ -1,4 +1,4 @@
-var entries = require('../models/entries')
+var entries   = require('../models/entries')
   ;
 
 exports.search = function *() {
@@ -15,7 +15,6 @@ exports.search = function *() {
   var maxDistance = this.request.query.maxDistance ? parseInt(this.request.query.maxDistance, 10) : 50000;
   var point = {type: "Point", coordinates: [ lng, lat]};
   var ents = yield entries.find({coordinates: {$near: {$geometry: point, $maxDistance: maxDistance}}});
-  //console.log(ents);
 
   // Return only the listed fields
   var filtered_entries = [];
@@ -33,6 +32,7 @@ exports.search = function *() {
     , 'short_description'
   ];
 
+  var start = {latitude: lat, longitude: lng};
   for (var i=0; i<ents.length; i++) {
     // Make sure the entry object has a valid property for all 
     // the fields listed above
@@ -53,6 +53,7 @@ exports.search = function *() {
       new_entry.thumbnails = ['', ''];
       new_entry.caption = '';
     }
+    
     filtered_entries.push(new_entry);
   }
 

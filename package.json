@@ -40,7 +40,8 @@
     "angular-leaflet-directive": "~0.7.6",
     "angular": "~1.2.15",
     "leaflet": "~0.7.2",
-    "underscore": "~1.6.0"
+    "underscore": "~1.6.0",
+    "haversine": "0.0.4"
   },
   "devDependencies": {
     "gulp": "~3.5.6",

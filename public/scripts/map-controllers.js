@@ -1,6 +1,7 @@
 var /*angular     = require('angular')
   ,*/bounceMarker   = require('./bouncemarker')
   //, directives    = require('./directives')
+  , haversine     = require('haversine')
   , L             = require('leaflet')
   , mapServices   = require('./services')
   , _             = require('underscore')
@@ -33,7 +34,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
       $scope.locations = [];
 
       // Initialize popup template
-      var template = _.template("<h2 class=\"heading <%= popup_class %>\"><%= name %></h2> <div class=\"body-content <%= popup_class %>\"><div class=\"body-text\"><p><%= short_description %></p> <p id=\"address-line-1\"><%= address1 %><% if (typeof address2 !== \"undefined\") { %>, <%= address2 %><% } %></p> <p id=\"address-line-2\"><%= city %>, <%= region %> <%= postal_code %>, <%= country %></p><a href=\"<%= hash %>/location/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
+      var template = _.template("<h2 class=\"heading <%= popup_class %>\"><%= name %></h2> <div class=\"body-content <%= popup_class %>\"><div class=\"body-text\"><p><%= short_description %></p><p id=\"distance\"><%= distance %> <%= unit %></p><a href=\"<%= hash %>/location/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
 
       function find_nearby_locations(lat, lng) {
         // Use 64 pixels for a retina display and 32 pixels otherwise
@@ -111,6 +112,22 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
               loc.thumbnail = (window.devicePixelRatio > 1) ? 1 : 0;
               loc.popup_class = (window.devicePixelRatio > 1) ? 'large' : '';
 
+              // Calculate distance from user's location
+              loc.unit = (loc.country === 'USA') ? 'miles' : 'km';
+              loc.distance = haversine(
+                  {
+                      latitude: $scope.user_location.lat
+                    , longitude: $scope.user_location.lng
+                  }
+                , {
+                      latitude: lat
+                    , longitude: lng
+                  }
+                , {
+                      unit: loc.unit
+                  }
+              ).toFixed(2);
+
               var coords = L.latLng(loc.coordinates.coordinates[1], loc.coordinates.coordinates[0]);
               var marker = null;
               switch(loc.categories[0]) {
@@ -149,6 +166,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
                   break;
               }
 
+              console.log(loc);
               // Push location to array
               $scope.locations.push(loc);
 
@@ -167,6 +185,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
       });
       
       map.on('locationfound', function (e) {
+        $scope.user_location = e.latlng;
         var cradius = e.accuracy / 2;
         var cmradius = (window.devicePixelRation > 1) ? 16 : 18;
         L.circle(e.latlng, cradius).addTo(map);

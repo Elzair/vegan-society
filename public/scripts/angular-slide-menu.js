@@ -1,6 +1,6 @@
 var slideMenu = angular.module('slideMenu', []);
 
-slideMenu.directive('asmSlideLeft', function($compile) {
+slideMenu.directive('asmSlideLeft', function() {
   return {
       restrict: 'AEC'
     , replace: true
@@ -12,7 +12,7 @@ slideMenu.directive('asmSlideLeft', function($compile) {
   };
 });
 
-slideMenu.directive('asmSlideRight', function($compile) {
+slideMenu.directive('asmSlideRight', function() {
   return {
       restrict: 'AEC'
     , replace: true
@@ -24,7 +24,7 @@ slideMenu.directive('asmSlideRight', function($compile) {
   };
 });
 
-slideMenu.directive('asmPushLeft', function($compile) {
+slideMenu.directive('asmPushLeft', function() {
   return {
       restrict: 'AEC'
     , replace: true
@@ -36,7 +36,7 @@ slideMenu.directive('asmPushLeft', function($compile) {
   };
 });
 
-slideMenu.directive('asmPushRight', function($compile) {
+slideMenu.directive('asmPushRight', function() {
   return {
       restrict: 'AEC'
     , link: function(scope, element, attr) {
@@ -47,7 +47,7 @@ slideMenu.directive('asmPushRight', function($compile) {
   };
 });
 
-slideMenu.directive('asmWrapper', function($compile, $document) {
+slideMenu.directive('asmWrapper', ['$compile', 'document', function($compile, $document) {
   return {
       restrict: 'AEC'
     , controller: function($scope, $element, $attrs) {
@@ -90,9 +90,9 @@ slideMenu.directive('asmWrapper', function($compile, $document) {
         $compile(element.contents())(scope);
       }
   };
-});
+}]);
 
-slideMenu.directive('asmControl', function($document, $compile) {
+slideMenu.directive('asmControl', ['$compile', function($compile) {
   return {
       restrict: 'AEC'
     , require: '^asmWrapper'
@@ -105,4 +105,4 @@ slideMenu.directive('asmControl', function($document, $compile) {
         $compile(element.contents())(scope);
       }
   };
-});
+}]);
