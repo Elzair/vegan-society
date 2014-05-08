@@ -61,15 +61,17 @@ function filter(arr) {
       });
       // Handle images specially
       obj.images  = [];
-      element.images.forEach(function(img, i, a) {
-        var new_img = {caption: img.caption || '', mime_type: img.mime_type};
-        // Upload original image to cloudinary and get secure URL
-        cloudinary.uploader.upload(img.files[3].uri, function(result) {
-          new_img.id = result.public_id;
-          new_img.url = result.secure_url;
+      if (element.images) {
+        element.images.forEach(function(img, i, a) {
+          var new_img = {caption: img.caption || '', mime_type: img.mime_type};
+          // Upload original image to cloudinary and get secure URL
+          cloudinary.uploader.upload(img.files[3].uri, function(result) {
+            new_img.id = result.public_id;
+            new_img.url = result.secure_url;
+          });
+          obj.images.push(new_img);
         });
-        obj.images.push(new_img);
-      });
+      }
       results.push(obj);
     }
   });
@@ -171,7 +173,7 @@ co(function* () {
           l.location = {
               type: "Point"
             //, coordinates: [parseFloat(gpsbody[0].lon, 10), parseFloat(gpsbody[0].lat, 10)]
-            , cooordinates: [loc.lng, loc.lat]
+            , coordinates: [loc.lng, loc.lat]
           };
         }
       }
