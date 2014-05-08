@@ -32,9 +32,6 @@ var include = [
   , 'cuisines'
   , 'tags'
   ,  'hours'
-  , 'images'
-];
-var special_include = [
 ];
 
 /**
@@ -62,7 +59,7 @@ function filter(arr) {
           obj[prop].other = element['localized_'+prop];
         }
       });
-      // Handle hours and images specially
+      // Handle images specially
       obj.images  = [];
       element.images.forEach(function(img, i, a) {
         var new_img = {caption: img.caption || '', mime_type: img.mime_type};
