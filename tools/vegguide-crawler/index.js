@@ -1,4 +1,5 @@
-var co = require('co')
+var cloudinary = require('cloudinary')
+  , co = require('co')
   , fs      = require('co-fs')
   , request = require('co-request')
   , util    = require('util')
@@ -30,10 +31,10 @@ var include = [
   , 'categories'
   , 'cuisines'
   , 'tags'
+  ,  'hours'
+  , 'images'
 ];
 var special_include = [
-    'hours'
-  , 'images'
 ];
 
 /**
@@ -60,6 +61,17 @@ function filter(arr) {
         if (element.hasOwnProperty('localized_'+prop)) {
           obj[prop].other = element['localized_'+prop];
         }
+      });
+      // Handle hours and images specially
+      obj.images  = [];
+      element.images.forEach(function(img, i, a) {
+        var new_img = {caption: img.caption || '', mime_type: img.mime_type};
+        // Upload original image to cloudinary and get secure URL
+        cloudinary.uploader.upload(img.files[3].uri, function(result) {
+          new_img.id = result.public_id;
+          new_img.url = result.secure_url;
+        });
+        obj.images.push(new_img);
       });
       results.push(obj);
     }
@@ -92,6 +104,9 @@ co(function* () {
   // Read in config data
   var conf_data = yield fs.readFile(__dirname + '/conf/auth.json', {encoding: 'utf8'});
   var conf = JSON.parse(conf_data);
+
+  // Initialize cloudinary
+  cloudinary.config(conf.cloudinary);
 
   // Create output directory if it does not yet exist
   try {
@@ -147,7 +162,7 @@ co(function* () {
         // Use Google's Geocoding API
         var qry_str = encodeURI(util.format('%s, %s, %s', l.address1.en_us, l.city.en_us, l.region.en_us));
         var url = util.format('https://maps.googleapis.com/maps/api/geocode/json?address=%s&sensor=false&key=%s', 
-            qry_str, conf.google_maps_api_key);
+            qry_str, conf.google_maps.api_key);
         console.log(url);
 
         // Store location as a GeoJSON Point object http://geojson.org/geojson-spec.html#id2
