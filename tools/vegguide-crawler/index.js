@@ -89,6 +89,10 @@ function add(arr, names) {
 }
 
 co(function* () {
+  // Read in config data
+  var conf_data = yield fs.readFile(__dirname + '/conf/auth.json', {encoding: 'utf8'});
+  var conf = JSON.parse(conf_data);
+
   // Create output directory if it does not yet exist
   try {
     yield fs.mkdir(__dirname+'/output');
@@ -133,22 +137,29 @@ co(function* () {
         var l = locations[j];
 
         // Do not waste bandwidth on entries with incomplete data
-        if (l.address1 === undefined || l.city === undefined || l.region === undefined) {
+        if (l.address1.en_us === undefined || l.city.en_us === undefined || l.region.en_us === undefined) {
           continue;
         }
 
-        // Use MapQuest Open's Geocoding API
-        var qry_str = encodeURIComponent(util.format('%s %s, %s', l.address1.en_us, l.city.en_us, l.region.en_us));
-        var url = util.format('http://open.mapquestapi.com/nominatim/v1/search?q=%s&format=json', qry_str);
+        //// Use MapQuest Open's Geocoding API
+        //var qry_str = encodeURIComponent(util.format('%s %s, %s', l.address1.en_us, l.city.en_us, l.region.en_us));
+        //var url = util.format('http://open.mapquestapi.com/nominatim/v1/search?q=%s&format=json', qry_str);
+        // Use Google's Geocoding API
+        var qry_str = encodeURI(util.format('%s, %s, %s', l.address1.en_us, l.city.en_us, l.region.en_us));
+        var url = util.format('https://maps.googleapis.com/maps/api/geocode/json?address=%s&sensor=false&key=%s', 
+            qry_str, conf.google_maps_api_key);
         console.log(url);
 
         // Store location as a GeoJSON Point object http://geojson.org/geojson-spec.html#id2
         var gpsresults = yield request.get({url: url, headers: {'User-Agent': 'VeganSocietyCrawler'}});
         var gpsbody = JSON.parse(gpsresults.body);
-        if (gpsbody.length > 0) {
-          l.coordinates = {
+        //if (gpsbody.length > 0) {
+        if (gpsbody.status === 'OK') {
+          var loc = gpsbody.results[0].geometry.location;
+          l.location = {
               type: "Point"
-            , coordinates: [parseFloat(gpsbody[0].lon, 10), parseFloat(gpsbody[0].lat, 10)]
+            //, coordinates: [parseFloat(gpsbody[0].lon, 10), parseFloat(gpsbody[0].lat, 10)]
+            , cooordinates: [loc.lng, loc.lat]
           };
         }
       }

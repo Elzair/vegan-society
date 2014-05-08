@@ -15,4 +15,5 @@ npm-debug.log
 node_modules
 conf/db.*.json
 tools/vegguide-crawler/output
+tools/vegguide-crawler/conf/auth.json
 .DS_Store
