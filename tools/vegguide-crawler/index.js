@@ -86,11 +86,17 @@ co(function* () {
     }
   }
 
-  // Write first '[' to file
-  yield fs.writeFile(__dirname + '/output/locations.json', '[');
+  // Get starting entry number and final entry number
+  var first_entry = process.argv[2] || 1;
+  var last_entry = process.argv[3] || 3000;
+
+  // Write first '[' to file if not resuming from previous attempt
+  if (first_entry > 1) {
+    yield fs.writeFile(__dirname + '/output/locations.json', '[');
+  }
 
   var separator = '';
-  for (var i=1; i<3000; i++) {
+  for (var i=first_entry; i<last_entry; i++) {
     console.log('Now fetching entries for region ' + i.toString());
     var results = yield request.get({url: 'http://www.vegguide.org/region/'+i.toString(), 
       headers: {'Accept': 'application/json'}});
@@ -103,7 +109,7 @@ co(function* () {
 
     if (parseInt(region.entry_count, 10) > 0) {
       var locresults = yield request.get({url: 'http://www.vegguide.org/region/'+i.toString()+'/entries', 
-        headers: {'Accept': 'application/json'}});
+        headers: {'Accept': 'application/json', 'User-Agent': 'VeganSocietyCrawler'}});
       var locations = add(filter(JSON.parse(locresults.body)));
 
       // Add GPS coordinates to locations
@@ -139,6 +145,8 @@ co(function* () {
     }
   }
 
-  // Write last ']' to file
-  yield fs.appendFile(__dirname + '/output/locations.json', ']');
+  // Write last ']' to file if program handled all entries
+  if (last_entry === 3000) {
+    yield fs.appendFile(__dirname + '/output/locations.json', ']');
+  }
 })();

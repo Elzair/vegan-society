@@ -17,6 +17,6 @@ To use this tool, first install its dependencies.
 
 Now you can run **vegguide-crawler** with the following command.
 
-    npm start
+    node index.js first_entry_number last_entry_number
 
 After it finishes running, you should see a large file, *output/locations.json*.
