@@ -5,31 +5,23 @@ var co = require('co')
   ;
 
 // List what parts of each entry to include
-var include = [
+var localized_include = [
     'name'
-  , 'sortable_name'
-  , 'localized_name'
   , 'short_description'
-  , 'localized_short_description'
   , 'long_description'
-  , 'localized_long_description'
   , 'address1'
   , 'address2'
   , 'neighborhood'
   , 'city'
   , 'region'
   , 'postal_code'
-  , 'localized_address1'
-  , 'localized_address2'
-  , 'localized_neighborhood'
-  , 'localized_city'
-  , 'localized_region'
-  , 'localized_postal_code'
+];
+var include = [
+    'sortable_name'
   , 'country'
   , 'phone'
   , 'website'
   , 'price_range'
-  , 'hours'
   , 'allows_smoking'
   , 'is_wheelchair_accessible'
   , 'accepts_reservations'
@@ -38,12 +30,15 @@ var include = [
   , 'categories'
   , 'cuisines'
   , 'tags'
+];
+var special_include = [
+    'hours'
   , 'images'
 ];
 
 /**
  * This function filters out all nonvegan entries & only includes the
- * properties in the include array above.
+ * properties in the include or localized_include arrays above.
  * @param arr array of entries
  * @return filtered array
  */
@@ -57,6 +52,15 @@ function filter(arr) {
           obj[prop] = element[prop];
         }
       });
+      localized_include.forEach(function(prop, i, a) {
+        obj[prop] = {};
+        if (element.hasOwnProperty(prop)) {
+          obj[prop].en_us = element[prop];
+        }
+        if (element.hasOwnProperty('localized_'+prop)) {
+          obj[prop].other = element['localized_'+prop];
+        }
+      });
       results.push(obj);
     }
   });
@@ -66,11 +70,20 @@ function filter(arr) {
 /**
  * This function adds some properties to an array of entries
  * @param arr array of entries
+ * @param names array of already reserved names
  * @return array with added properties
  */
-function add(arr) {
+function add(arr, names) {
   for (var i=0; i<arr.length; i++) {
     arr[i].imported = true;
+    var count = 0; // Number of time unique name already appears
+    for (var j=0; j<names.length; j++) {
+      if (names[j].startsWith(encodeURI(arr[i].name.en_us))) {
+        count++;
+      }
+    }
+    arr[i].unique_name = count > 0 ? encodeURI(arr[i].name.en_us) + '-' + count.toString() : encodeURI(arr[i].name.en_us);
+    names.push(arr[i].unique_name);
   }
   return arr;
 }
@@ -91,9 +104,12 @@ co(function* () {
   var last_entry = process.argv[3] || 3000;
 
   // Write first '[' to file if not resuming from previous attempt
-  if (first_entry > 1) {
+  if (first_entry <= 1) {
     yield fs.writeFile(__dirname + '/output/locations.json', '[');
   }
+
+  // Create array of unique names
+  var unique_names = [];
 
   var separator = '';
   for (var i=first_entry; i<last_entry; i++) {
@@ -110,7 +126,7 @@ co(function* () {
     if (parseInt(region.entry_count, 10) > 0) {
       var locresults = yield request.get({url: 'http://www.vegguide.org/region/'+i.toString()+'/entries', 
         headers: {'Accept': 'application/json', 'User-Agent': 'VeganSocietyCrawler'}});
-      var locations = add(filter(JSON.parse(locresults.body)));
+      var locations = add(filter(JSON.parse(locresults.body)), unique_names);
 
       // Add GPS coordinates to locations
       for (var j=0; j<locations.length; j++) {
@@ -122,7 +138,7 @@ co(function* () {
         }
 
         // Use MapQuest Open's Geocoding API
-        var qry_str = encodeURIComponent(util.format('%s %s, %s', l.address1, l.city, l.region));
+        var qry_str = encodeURIComponent(util.format('%s %s, %s', l.address1.en_us, l.city.en_us, l.region.en_us));
         var url = util.format('http://open.mapquestapi.com/nominatim/v1/search?q=%s&format=json', qry_str);
         console.log(url);
 

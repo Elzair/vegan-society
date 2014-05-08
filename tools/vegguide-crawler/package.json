@@ -1,6 +1,6 @@
 {
   "name": "vegguide-crawler",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Crawler to retrieve all locations from http://www.vegguide.org",
   "main": "index.js",
   "scripts": {
