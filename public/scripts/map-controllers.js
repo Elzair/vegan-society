@@ -87,6 +87,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
         // Find locations/events around user's location
         Locations.search({lat: lat, lng: lng}).$promise.then(function(locations) {
           locations.forEach(function(loc, index, array) {
+            console.log(loc);
             // Avoid adding the same location twice
             var duplicate = false;
             for (var i=0; i<$scope.locations.length; i++) {
@@ -111,7 +112,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
                 , {unit: loc.unit}
               ).toFixed(2);
 
-              var coords = L.latLng(loc.coordinates.coordinates[1], loc.coordinates.coordinates[0]);
+              var coords = L.latLng(loc.location.coordinates[1], loc.location.coordinates[0]);
               var marker = null;
               switch(loc.categories[0]) {
                 case 'Restaurant':

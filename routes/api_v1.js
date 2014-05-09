@@ -1,8 +1,11 @@
 var entries   = require(__dirname + '/../models/entries')
-  , imghost   = require(__dirname + '/../lib/imghost')
+  //, imghost   = require(__dirname + '/../lib/imghost')
+  , cloudinary = require('cloudinary')
+  , fs = require('co-fs')
   ;
 
 exports.search = function *() {
+  cloudinary.config(JSON.parse(yield fs.readFile(__dirname+'/../conf/cloudinary.json', {encoding: 'utf8'})));
   // Handle invalid query
   if (!this.request.query.lat || !this.request.query.lng) {
     this.response.status = 406;
@@ -16,6 +19,7 @@ exports.search = function *() {
   var maxDistance = this.request.query.maxDistance ? parseInt(this.request.query.maxDistance, 10) : 50000;
   var point = {type: "Point", coordinates: [ lng, lat]};
   var ents = yield entries.find({location: {$near: {$geometry: point, $maxDistance: maxDistance}}});
+  console.log(require('util').format('%j', ents));
 
   // Return only the listed fields
   var filtered_entries = [];
@@ -25,8 +29,8 @@ exports.search = function *() {
     , 'address2'
     , 'categories'
     , 'city'
-    , 'coordinates'
     , 'country'
+    , 'location'
     , 'name'
     , 'postal_code'
     , 'region'
@@ -42,13 +46,11 @@ exports.search = function *() {
     }
 
     // Return first image as thumbnail, if available
-    //console.log(imghost.image(ents[i].images[0].id, {width: 160, height: 100, crop: 'fill'}));
     if (ents[i].images && ents[i].images.length > 0 && ents[i].images[0].id !== undefined) {
+      console.log(cloudinary.url(ents[i].images[0].id, {width: 160, height: 100, crop: 'fill'}));
       new_entry.thumbnails = [
-          imghost.image(ents[i].images[0].id, {width: 160, height: 100, crop: 'fill'})
-        , imghost.image(ents[i].images[0].id, {width: 320, height: 200, crop: 'fill'})
-      //    ents[i].images[0].files[0].uri
-      //  , ents[i].images[0].files[1].uri
+          cloudinary.url(ents[i].images[0].id, {width: 160, height: 100, crop: 'fill'})
+        , cloudinary.url(ents[i].images[0].id, {width: 320, height: 200, crop: 'fill'})
       ];
       new_entry.caption = ents[i].images[0].caption || '';
     }
@@ -77,10 +79,3 @@ exports.location = function *(id) {
   this.response.body = yield entries.findById(id);
 };
 
-exports.test = function *() {
-  var point = {type: "Point", coordinates: [ -80.8092673, 35.2465069]};
-  var ents = yield entries.find({location: {$near: {$geometry: point, $maxDistance: 5000}}});
-
-  console.log(JSON.stringify(ents));
-  this.response.body = JSON.stringify(ents);
-};

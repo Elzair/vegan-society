@@ -27,7 +27,6 @@ app.use(route.get('/', routes.index));
 app.use(route.get('/location/:id', routes.location));
 app.use(route.get('/api/v1/location/:id', api_v1.location));
 app.use(route.get('/api/v1/search', api_v1.search));
-app.use(route.get('/api/v1/test', api_v1.test));
 
 // Get host and port
 switch(env) {

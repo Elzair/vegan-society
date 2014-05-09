@@ -3,7 +3,6 @@ var entries = require('../models/entries')
   ;
 
 exports.index = function *() {
-  //console.log(this.request.header);
   this.response.body = yield render('main', {host: global.host});
 };
 
