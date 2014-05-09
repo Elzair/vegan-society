@@ -5,9 +5,9 @@
   <div class="image-container" data-ng-hide="info.images.length === 0">
     <ul rn-carousel rn-carousel-buffered rn-carousel-indicator rn-carousel-control class="image ng-cloak">
       <li data-ng-repeat="image in info.images" 
-        data-ng-style="{'height': image.files[2].height+'px', 
-        'background-image': 'url(' + image.files[2].uri + ')', 
-        'background-size': image.files[2].width+'px '+image.files[2].height+'px', 
+        data-ng-style="{'height': '375px', 
+        'background-image': 'url(' + image.url + ')', 
+        'background-size': '375px 600px', 
         'background-repeat': 'no-repeat', 
         'background-position': 'center'}">
       </li>
@@ -18,8 +18,8 @@
       <dl>
         <dt>Address</dt>
         <dd>[[ info.address ]]</dd>
-        <dd>[[ info.city + ', ' + info.region + ' ' + info.postal_code ]]</dd>
-        <dd>[[ info.country ]]
+        <dd>[[ info.city.en_us + ', ' + info.region.en_us + ' ' + info.postal_code.en_us ]]</dd>
+        <dd>[[ info.country.en_us ]]
       </dl>
     </li>
     <li>

@@ -1,4 +1,5 @@
-var entries   = require('../models/entries')
+var entries   = require(__dirname + '/../models/entries')
+  , imghost   = require(__dirname + '/../lib/imghost')
   ;
 
 exports.search = function *() {
@@ -14,7 +15,7 @@ exports.search = function *() {
   var lng = parseFloat(this.request.query.lng);
   var maxDistance = this.request.query.maxDistance ? parseInt(this.request.query.maxDistance, 10) : 50000;
   var point = {type: "Point", coordinates: [ lng, lat]};
-  var ents = yield entries.find({coordinates: {$near: {$geometry: point, $maxDistance: maxDistance}}});
+  var ents = yield entries.find({location: {$near: {$geometry: point, $maxDistance: maxDistance}}});
 
   // Return only the listed fields
   var filtered_entries = [];
@@ -32,7 +33,6 @@ exports.search = function *() {
     , 'short_description'
   ];
 
-  var start = {latitude: lat, longitude: lng};
   for (var i=0; i<ents.length; i++) {
     // Make sure the entry object has a valid property for all 
     // the fields listed above
@@ -42,10 +42,13 @@ exports.search = function *() {
     }
 
     // Return first image as thumbnail, if available
-    if (ents[i].images && ents[i].images.length > 0) {
+    //console.log(imghost.image(ents[i].images[0].id, {width: 160, height: 100, crop: 'fill'}));
+    if (ents[i].images && ents[i].images.length > 0 && ents[i].images[0].id !== undefined) {
       new_entry.thumbnails = [
-          ents[i].images[0].files[0].uri
-        , ents[i].images[0].files[1].uri
+          imghost.image(ents[i].images[0].id, {width: 160, height: 100, crop: 'fill'})
+        , imghost.image(ents[i].images[0].id, {width: 320, height: 200, crop: 'fill'})
+      //    ents[i].images[0].files[0].uri
+      //  , ents[i].images[0].files[1].uri
       ];
       new_entry.caption = ents[i].images[0].caption || '';
     }
@@ -74,3 +77,10 @@ exports.location = function *(id) {
   this.response.body = yield entries.findById(id);
 };
 
+exports.test = function *() {
+  var point = {type: "Point", coordinates: [ -80.8092673, 35.2465069]};
+  var ents = yield entries.find({location: {$near: {$geometry: point, $maxDistance: 5000}}});
+
+  console.log(JSON.stringify(ents));
+  this.response.body = JSON.stringify(ents);
+};

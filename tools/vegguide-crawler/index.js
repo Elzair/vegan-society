@@ -1,8 +1,8 @@
 var cloudinary = require('cloudinary')
-  , co = require('co')
-  , fs      = require('co-fs')
-  , request = require('co-request')
-  , util    = require('util')
+  , co         = require('co')
+  , fs         = require('co-fs')
+  , request    = require('co-request')
+  , util       = require('util')
   ;
 
 // List what parts of each entry to include

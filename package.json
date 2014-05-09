@@ -42,7 +42,8 @@
     "leaflet": "~0.7.2",
     "underscore": "~1.6.0",
     "haversine": "0.0.4",
-    "angular-slide-menu": "~0.4.3"
+    "angular-slide-menu": "~0.4.3",
+    "cloudinary": "~1.0.9"
   },
   "devDependencies": {
     "gulp": "~3.5.6",

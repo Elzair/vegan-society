@@ -21,21 +21,11 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
           maxZoom: 18
       }).addTo(map);
 
-      // Add menu control to map
-      //var menu = L.control({position: 'topright'});
-      //menu.onAdd = function(map) {
-      //  this._div = L.DomUtil.create('asm-control', '');
-      //  this._div.dataset.menu = 'pushRight';
-      //  this._div.innerHTML = '<img src="/images/menu.svg"/>';
-      //  return this._div;
-      //};
-      //menu.addTo(map);
-
       // Initialize list of locations
       $scope.locations = [];
 
       // Initialize popup template
-      var template = _.template("<h2 class=\"heading <%= popup_class %>\"><%= name %></h2> <div class=\"body-content <%= popup_class %>\"><div class=\"body-text\"><p><%= short_description %></p><p id=\"distance\"><%= distance %> <%= unit %></p><a href=\"<%= hash %>/location/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
+      var template = _.template("<h2 class=\"heading <%= popup_class %>\"><%= name.en_us %></h2> <div class=\"body-content <%= popup_class %>\"><div class=\"body-text\"><p><%= short_description.en_us %></p><p id=\"distance\"><%= distance %> <%= unit %></p><a href=\"<%= hash %>/location/<%= _id['$old'] %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
 
       function find_nearby_locations(lat, lng) {
         // Use 64 pixels for a retina display and 32 pixels otherwise
@@ -116,17 +106,9 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations',
               // Calculate distance from user's location
               loc.unit = (loc.country === 'USA') ? 'miles' : 'km';
               loc.distance = haversine(
-                  {
-                      latitude: $scope.user_location.lat
-                    , longitude: $scope.user_location.lng
-                  }
-                , {
-                      latitude: lat
-                    , longitude: lng
-                  }
-                , {
-                      unit: loc.unit
-                  }
+                  {latitude: $scope.user_location.lat, longitude: $scope.user_location.lng}
+                , {latitude: lat, longitude: lng}
+                , {unit: loc.unit}
               ).toFixed(2);
 
               var coords = L.latLng(loc.coordinates.coordinates[1], loc.coordinates.coordinates[0]);

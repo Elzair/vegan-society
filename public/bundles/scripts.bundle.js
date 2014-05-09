@@ -120,8 +120,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
-	  , */carousel       = __webpack_require__(14)
-	  , mapServices   = __webpack_require__(15)
+	  , */carousel       = __webpack_require__(13)
+	  , mapServices   = __webpack_require__(14)
 	  ;
 
 	var entryControllers = angular.module('entryControllers', ['angular-carousel', 'mapServices']);
@@ -129,9 +129,9 @@
 	entryControllers.controller('EntryCtrl', ['$scope', '$routeParams', '$sce', 'LocationInfo',
 	    function($scope, $routeParams, $sce, LocationInfo) {
 	      LocationInfo.get({id: $routeParams.id}).$promise.then(function(info) {
-	        info.address = (info.address2 !== undefined) ? info.address1 + ', ' + info.address2 : info.address1;
+	        info.address = (info.address2 !== undefined) ? info.address1.en_us + ', ' + info.address2.en_us : info.address1.en_us;
 	        $scope.info = info;
-	        $scope.description = $sce.trustAsHtml(info.long_description['text/html']);
+	        $scope.description = $sce.trustAsHtml(info.long_description.en_us['text/html']);
 	      });
 	    }
 	]);
@@ -169,10 +169,10 @@
 	var /*angular     = require('angular')
 	  ,*/bounceMarker   = __webpack_require__(16)
 	  //, directives    = require('./directives')
-	  , haversine     = __webpack_require__(19)
+	  , haversine     = __webpack_require__(20)
 	  , L             = __webpack_require__(17)
-	  , mapServices   = __webpack_require__(15)
-	  , _             = __webpack_require__(20)
+	  , mapServices   = __webpack_require__(14)
+	  , _             = __webpack_require__(19)
 	  ;
 
 	var mapControllers = angular.module('mapControllers', [
@@ -189,21 +189,11 @@
 	          maxZoom: 18
 	      }).addTo(map);
 
-	      // Add menu control to map
-	      //var menu = L.control({position: 'topright'});
-	      //menu.onAdd = function(map) {
-	      //  this._div = L.DomUtil.create('asm-control', '');
-	      //  this._div.dataset.menu = 'pushRight';
-	      //  this._div.innerHTML = '<img src="/images/menu.svg"/>';
-	      //  return this._div;
-	      //};
-	      //menu.addTo(map);
-
 	      // Initialize list of locations
 	      $scope.locations = [];
 
 	      // Initialize popup template
-	      var template = _.template("<h2 class=\"heading <%= popup_class %>\"><%= name %></h2> <div class=\"body-content <%= popup_class %>\"><div class=\"body-text\"><p><%= short_description %></p><p id=\"distance\"><%= distance %> <%= unit %></p><a href=\"<%= hash %>/location/<%= _id %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
+	      var template = _.template("<h2 class=\"heading <%= popup_class %>\"><%= name.en_us %></h2> <div class=\"body-content <%= popup_class %>\"><div class=\"body-text\"><p><%= short_description.en_us %></p><p id=\"distance\"><%= distance %> <%= unit %></p><a href=\"<%= hash %>/location/<%= _id['$old'] %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
 
 	      function find_nearby_locations(lat, lng) {
 	        // Use 64 pixels for a retina display and 32 pixels otherwise
@@ -284,17 +274,9 @@
 	              // Calculate distance from user's location
 	              loc.unit = (loc.country === 'USA') ? 'miles' : 'km';
 	              loc.distance = haversine(
-	                  {
-	                      latitude: $scope.user_location.lat
-	                    , longitude: $scope.user_location.lng
-	                  }
-	                , {
-	                      latitude: lat
-	                    , longitude: lng
-	                  }
-	                , {
-	                      unit: loc.unit
-	                  }
+	                  {latitude: $scope.user_location.lat, longitude: $scope.user_location.lng}
+	                , {latitude: lat, longitude: lng}
+	                , {unit: loc.unit}
 	              ).toFixed(2);
 
 	              var coords = L.latLng(loc.coordinates.coordinates[1], loc.coordinates.coordinates[0]);
@@ -381,8 +363,7 @@
 /* 10 */,
 /* 11 */,
 /* 12 */,
-/* 13 */,
-/* 14 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -917,7 +898,7 @@
 
 
 /***/ },
-/* 15 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var angular = require('angular');
@@ -946,6 +927,7 @@
 
 
 /***/ },
+/* 15 */,
 /* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -10683,48 +10665,6 @@
 /* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	// haversine
-	// By Nick Justice (niix)
-	// https://github.com/niix/haversine
-
-	var haversine = (function() {
-
-	  // convert to radians
-	  var toRad = function(num) {
-	    return num * Math.PI / 180
-	  }
-
-	  return function haversine(start, end, options) {
-	    var miles = 3960
-	    var km    = 6371
-	    options   = options || {}
-
-	    var R = options.unit === 'km' ? km : miles
-
-	    var dLat = toRad(end.latitude - start.latitude)
-	    var dLon = toRad(end.longitude - start.longitude)
-	    var lat1 = toRad(start.latitude)
-	    var lat2 = toRad(end.latitude)
-
-	    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-	            Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2)
-	    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-
-	    if (options.threshold) {
-	      return options.threshold > (R * c)
-	    } else {
-	      return R * c
-	    }     
-	  }
-
-	})()
-
-	module.exports = haversine
-
-/***/ },
-/* 20 */
-/***/ function(module, exports, __webpack_require__) {
-
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.6.0
 	//     http://underscorejs.org
 	//     (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -12069,6 +12009,48 @@
 	  }
 	}).call(this);
 
+
+/***/ },
+/* 20 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// haversine
+	// By Nick Justice (niix)
+	// https://github.com/niix/haversine
+
+	var haversine = (function() {
+
+	  // convert to radians
+	  var toRad = function(num) {
+	    return num * Math.PI / 180
+	  }
+
+	  return function haversine(start, end, options) {
+	    var miles = 3960
+	    var km    = 6371
+	    options   = options || {}
+
+	    var R = options.unit === 'km' ? km : miles
+
+	    var dLat = toRad(end.latitude - start.latitude)
+	    var dLon = toRad(end.longitude - start.longitude)
+	    var lat1 = toRad(start.latitude)
+	    var lat2 = toRad(end.latitude)
+
+	    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+	            Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2)
+	    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+
+	    if (options.threshold) {
+	      return options.threshold > (R * c)
+	    } else {
+	      return R * c
+	    }     
+	  }
+
+	})()
+
+	module.exports = haversine
 
 /***/ }
 /******/ ])
