@@ -212,8 +212,9 @@ co(function* () {
   var separator = '';
 
   console.log('Starting crawler'.info);
+
   // Fetch data for each region
-  for (var i=first_entry; i<last_entry; i++) {
+  for (var i=first_entry; i<=last_entry; i++) {
     console.log(util.format('Now fetching entries for region %d', i).info);
     var results = yield request.get({url: 'http://www.vegguide.org/region/'+i.toString(), 
       headers: {'Accept': 'application/json', 'User-Agent': 'VeganSocietyCrawler'}});
