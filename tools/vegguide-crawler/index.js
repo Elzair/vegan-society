@@ -2,7 +2,9 @@ var cloudinary = require('cloudinary')
   , colors     = require('colors')
   , co         = require('co')
   , fs         = require('co-fs')
+  , path       = require('path')
   , request    = require('co-request')
+  , stdio      = require('stdio')
   , util       = require('util')
   ;
 
@@ -58,7 +60,7 @@ function img_upload(url) {
  * This function filters out all nonvegan entries & only includes the
  * properties in the include or localized_include arrays above.
  * @param entries array of entries
- * @return filtered array
+ * @return filtered_entries filtered array
  */
 function *filter(entries) {
   var filtered_entries = [];
@@ -151,17 +153,27 @@ function *add(entries, names, conf) {
  * Main Function
  */
 co(function* () {
-  console.log('Starting crawler'.info);
+  // Process command-line arguments
+  var ops = stdio.getopt({
+      'conf': {key: 'c', args: 1, description: 'path to config file'}
+    , 'first': {key: 'f', args: 1, description: 'first entry number'}
+    , 'last': {key: 'l', args: 1, description: 'last entry number'}
+    , 'output': {key: 'o', args: 1, description: 'path to output file'}
+  });
+  var conf_path = ops.conf || __dirname + '/conf/auth.json';
+  var first_entry = ops.first || 1;
+  var last_entry = ops.last || 3000;
+  var output_path = ops.output || __dirname + '/output/entries.json';
 
   // Read in config data
-  var conf = JSON.parse(yield fs.readFile(__dirname + '/conf/auth.json', {encoding: 'utf8'}));
+  var conf = JSON.parse(yield fs.readFile(conf_path, {encoding: 'utf8'}));
 
   // Initialize cloudinary
   cloudinary.config(conf.cloudinary);
 
   // Create output directory if it does not yet exist
   try {
-    yield fs.mkdir(__dirname+'/output');
+    yield fs.mkdir(path.dirname(output_path));
   }
   catch (e) {
     if (e.code === 'EEXIST') {
@@ -169,17 +181,15 @@ co(function* () {
     }
   }
 
-  // Get starting entry number and final entry number
-  var first_entry = process.argv[2] || 1;
-  var last_entry = process.argv[3] || 3000;
-
   // Write first '[' to file
-  yield fs.writeFile(__dirname + '/output/entries.json', '[');
+  yield fs.writeFile(output_path, '[');
 
   // Create array of unique names
   var unique_names = [];
 
   var separator = '';
+
+  console.log('Starting crawler'.info);
   // Fetch data for each region
   for (var i=first_entry; i<last_entry; i++) {
     console.log(util.format('Now fetching entries for region %d', i).info);
@@ -205,18 +215,18 @@ co(function* () {
         // Strip first "[" and last "]" from output
         output = separator + output.substring(1, output.length-1);
         separator = ',';
-        yield fs.appendFile(__dirname + '/output/entries.json', output);
+        yield fs.appendFile(output_path, output);
       }
     }
   }
 
   // Write last ']' to file
-  yield fs.appendFile(__dirname + '/output/entries.json', ']');
+  yield fs.appendFile(output_path, ']');
 
   // Log output
   console.log('All regions have been fetched!'.success);
-  console.log('Import the data with the following command: '.info);
-  console.log('mongoimport -h host:port -d database -c entries -u username -p password --jsonArray output/entries.json'.code);
-  console.log('Also, make sure to log into the Mongo shell and issue the following command'.info);
-  console.log('db.entries.ensureIndex({location: "2dsphere"});'.code);
+  console.log('Import the data with the following command:'.info);
+  console.log(util.format('mongoimport -h host:port -d db_name -c entries -u username -p password --jsonArray %s', output_path).code);
+  console.log('Also, make sure to log into the Mongo shell and issue the following command:'.info);
+  console.log('use db_name; db.entries.ensureIndex({location: "2dsphere"});'.code);
 })();

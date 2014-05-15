@@ -17,6 +17,12 @@ To use this tool, first install its dependencies.
 
 Now you can run **vegguide-crawler** with the following command.
 
-    node index.js first_entry_number last_entry_number
+    node index.js -f first_entry_number -l last_entry_number
 
-After it finishes running, you should see a large file, *output/locations.json*.
+After it finishes running, you should see a large file, which is either *output/entries.json* or the file you specified.
+
+### Optional Arguments
+* **-c** or **--conf**: the path to the config file
+* **-f** or **--first**: the number of the first entry to crawl
+* **-l** or **--last**: the number of the last entry to crawl
+* **-o** or **--output**: the path to the output file
