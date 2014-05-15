@@ -2,6 +2,7 @@ var cloudinary = require('cloudinary')
   , colors     = require('colors')
   , co         = require('co')
   , fs         = require('co-fs')
+  , md         = require('html-md')
   , path       = require('path')
   , request    = require('co-request')
   , stdio      = require('stdio')
@@ -44,15 +45,16 @@ var include = [
   , 'categories'
   , 'cuisines'
   , 'tags'
-  ,  'hours'
+  , 'hours'
 ];
 
-// Convert cloudinary's image uploader function from a callback to a yieldable
-function img_upload(url) {
-  return function(fn) {
-    cloudinary.uploader.upload(url, function(result) {
-      fn(null, result.public_id);
+// Convert a function from a callback-style function to a yieldable
+function cb2yield(fn, args) {
+  return function(ffn) {
+    args.push(function(result) {
+      ffn(null, result);
     });
+    fn.apply(null, args);
   };
 }
 
@@ -63,6 +65,13 @@ function img_upload(url) {
  * @return filtered_entries filtered array
  */
 function *filter(entries) {
+  // This function returns the long_description in both HTML and Markdown format
+  var handle_long_description = function(long_desc) {
+    return {
+        'text/html': long_desc['text/html']
+      , 'text/md': md(long_desc['text/html'])
+    };
+  };
   var filtered_entries = [];
   for (var i=0; i<entries.length; i++) {
     var entry = entries[i];
@@ -79,10 +88,12 @@ function *filter(entries) {
         var locprop = localized_include[k];
         filtered_entry[locprop] = {};
         if (entry.hasOwnProperty(locprop)) {
-          filtered_entry[locprop].en_us = entry[locprop];
+          filtered_entry[locprop].en_us = locprop === 'long_description' ? 
+            handle_long_description(entry[locprop]) : entry[locprop];
         }
         if (entry.hasOwnProperty('localized_'+locprop)) {
-          filtered_entry[locprop].other = entry['localized_'+locprop];
+          filtered_entry[locprop].other = locprop === 'long_description' ? 
+            handle_long_description(entry['localized_'+locprop]) : (entry['localized_'+locprop]);
         }
       }
       // Handle images specially
@@ -92,7 +103,9 @@ function *filter(entries) {
           var img = entry.images[m];
           var new_img = {caption: img.caption || '', mime_type: img.mime_type};
           // Upload original image to cloudinary and get resulting ID
-          new_img.id = yield img_upload(img.files[3].uri);
+          //new_img.id = yield img_upload(img.files[3].uri);
+          var res = yield cb2yield(cloudinary.uploader.upload, [img.files[3].uri]);
+          new_img.id = res.public_id;
           console.log(util.format('Uploaded "%s" to %s', new_img.caption, cloudinary.url(new_img.id)).info);
           filtered_entry.images.push(new_img);
         }
@@ -156,6 +169,7 @@ co(function* () {
   // Process command-line arguments
   var ops = stdio.getopt({
       'conf': {key: 'c', args: 1, description: 'path to config file'}
+    , 'delete': {key: 'd', args: 0, description: 'delete all existing cloudinary images'}
     , 'first': {key: 'f', args: 1, description: 'first entry number'}
     , 'last': {key: 'l', args: 1, description: 'last entry number'}
     , 'output': {key: 'o', args: 1, description: 'path to output file'}
@@ -170,6 +184,11 @@ co(function* () {
 
   // Initialize cloudinary
   cloudinary.config(conf.cloudinary);
+
+  // Delete all existing images in cloudinary if user specified delete option
+  if (ops.delete) {
+    yield cb2yield(cloudinary.api.delete_all_resources, []);
+  }
 
   // Create output directory if it does not yet exist
   try {
