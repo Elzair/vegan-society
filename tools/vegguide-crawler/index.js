@@ -1,9 +1,20 @@
 var cloudinary = require('cloudinary')
+  , colors     = require('colors')
   , co         = require('co')
   , fs         = require('co-fs')
   , request    = require('co-request')
   , util       = require('util')
   ;
+
+// Set color themes
+colors.setTheme({
+    code: 'cyan'
+  , debug: 'grey'
+  , error: 'red'
+  , info: 'blue'
+  , success: 'green'
+  , warning: 'yellow'
+});
 
 // List what parts of each entry to include
 var localized_include = [
@@ -34,47 +45,63 @@ var include = [
   ,  'hours'
 ];
 
+function img_upload(url) {
+  return function(fn) {
+    cloudinary.uploader.upload(url, function(result) {
+      fn(null, result.public_id);
+    });
+  };
+}
+
 /**
  * This function filters out all nonvegan entries & only includes the
  * properties in the include or localized_include arrays above.
  * @param arr array of entries
  * @return filtered array
  */
-function filter(arr) {
+function *filter(arr, num) {
+  console.log(util.format('Filtering entries for region %d', num).debug);
   var results = [];
-  arr.forEach(function(element, index, array) {
+  //arr.forEach(function(element, index, array) {
+  for (var i=0; i<arr.length; i++) {
+    var element = arr[i];
     if (element.veg_level === '5') {
+      console.log(util.format('%s matches!', element.name).debug);
       var obj = {};
-      include.forEach(function(prop, i, a) {
+      //include.forEach(function(prop, i, a) {
+      for (var j=0; j<include.length; j++) {
+        var prop = include[j];
         if (element.hasOwnProperty(prop)) {
           obj[prop] = element[prop];
         }
-      });
-      localized_include.forEach(function(prop, i, a) {
-        obj[prop] = {};
-        if (element.hasOwnProperty(prop)) {
-          obj[prop].en_us = element[prop];
+      }//);
+      //localized_include.forEach(function(prop, i, a) {
+      for (var k=0; k<localized_include.length; k++) {
+        var locprop = localized_include[k];
+        obj[locprop] = {};
+        if (element.hasOwnProperty(locprop)) {
+          obj[locprop].en_us = element[locprop];
         }
-        if (element.hasOwnProperty('localized_'+prop)) {
-          obj[prop].other = element['localized_'+prop];
+        if (element.hasOwnProperty('localized_'+locprop)) {
+          obj[locprop].other = element['localized_'+locprop];
         }
-      });
+      }//);
       // Handle images specially
       obj.images  = [];
       if (element.images) {
-        element.images.forEach(function(img, i, a) {
+        //element.images.forEach(function(img, i, a) {
+        for (var m=0; m<element.images.length; m++) {
+          var img = element.images[m];
           var new_img = {caption: img.caption || '', mime_type: img.mime_type};
-          // Upload original image to cloudinary and get secure URL
-          cloudinary.uploader.upload(img.files[3].uri, function(result) {
-            new_img.id = result.public_id;
-            new_img.url = result.secure_url;
-          });
+          // Upload original image to cloudinary and get resulting ID
+          new_img.id = yield img_upload(img.files[3].uri);
+          console.log(util.format('Uploaded "%s" to %s', new_img.caption, cloudinary.url(new_img.id)).info);
           obj.images.push(new_img);
-        });
+        }//);
       }
       results.push(obj);
     }
-  });
+  }//);
   return results;
 }
 
@@ -87,19 +114,25 @@ function filter(arr) {
 function add(arr, names) {
   for (var i=0; i<arr.length; i++) {
     arr[i].imported = true;
-    var count = 0; // Number of time unique name already appears
+    var count = 0; // Number of time "unique" name already appears
     for (var j=0; j<names.length; j++) {
       if (names[j].startsWith(encodeURI(arr[i].name.en_us))) {
         count++;
       }
     }
+    // Set element's unique_name equal to either its encoded name or its encoded name plus the number of previous
+    // locations with the same encoded name
     arr[i].unique_name = count > 0 ? encodeURI(arr[i].name.en_us) + '-' + count.toString() : encodeURI(arr[i].name.en_us);
     names.push(arr[i].unique_name);
   }
   return arr;
 }
 
+/**
+ * Main Function
+ */
 co(function* () {
+  console.log('Starting crawler'.info);
   // Read in config data
   var conf_data = yield fs.readFile(__dirname + '/conf/auth.json', {encoding: 'utf8'});
   var conf = JSON.parse(conf_data);
@@ -113,7 +146,7 @@ co(function* () {
   }
   catch (e) {
     if (e.code === 'EEXIST') {
-      console.log('Output directory already exists. Moving on.');
+      console.log('Output directory already exists. Moving on.'.warning);
     }
   }
 
@@ -121,32 +154,32 @@ co(function* () {
   var first_entry = process.argv[2] || 1;
   var last_entry = process.argv[3] || 3000;
 
-  // Write first '[' to file if not resuming from previous attempt
-  if (first_entry <= 1) {
-    yield fs.writeFile(__dirname + '/output/locations.json', '[');
-  }
+  // Write first '[' to file
+  yield fs.writeFile(__dirname + '/output/locations.json', '[');
 
   // Create array of unique names
   var unique_names = [];
 
   var separator = '';
   for (var i=first_entry; i<last_entry; i++) {
-    console.log('Now fetching entries for region ' + i.toString());
+    // Fetch data for each entry
+    console.log('Now fetching entries for region '.info + i.toString().info);
     var results = yield request.get({url: 'http://www.vegguide.org/region/'+i.toString(), 
       headers: {'Accept': 'application/json'}});
     var region = JSON.parse(results.body);
 
+    // Handle invalid regions
     if (region.hasOwnProperty('regions')) {
-      console.error('Nonexistent region: ' + i.toString());
+      console.error('Nonexistent region: '.error + i.toString().error);
       continue;
     }
 
     if (parseInt(region.entry_count, 10) > 0) {
       var locresults = yield request.get({url: 'http://www.vegguide.org/region/'+i.toString()+'/entries', 
         headers: {'Accept': 'application/json', 'User-Agent': 'VeganSocietyCrawler'}});
-      var locations = add(filter(JSON.parse(locresults.body)), unique_names);
+      var locations = add(yield filter(JSON.parse(locresults.body), i), unique_names);
 
-      // Add GPS coordinates to locations
+      // Add GPS coordinates to vegan locations
       for (var j=0; j<locations.length; j++) {
         var l = locations[j];
 
@@ -163,13 +196,12 @@ co(function* () {
         var url = util.format('https://maps.googleapis.com/maps/api/geocode/json?address=%s&sensor=false&key=%s', 
             qry_str, conf.google_maps.api_key);
         console.log(url);
-
-        // Store location as a GeoJSON Point object http://geojson.org/geojson-spec.html#id2
         var gpsresults = yield request.get({url: url, headers: {'User-Agent': 'VeganSocietyCrawler'}});
         var gpsbody = JSON.parse(gpsresults.body);
         //if (gpsbody.length > 0) {
         if (gpsbody.status === 'OK') {
           var loc = gpsbody.results[0].geometry.location;
+          // Store location as a GeoJSON Point object http://geojson.org/geojson-spec.html#id2
           l.location = {
               type: "Point"
             //, coordinates: [parseFloat(gpsbody[0].lon, 10), parseFloat(gpsbody[0].lat, 10)]
@@ -178,16 +210,24 @@ co(function* () {
         }
       }
 
-      var output = util.format('%j', locations);
-      // Strip first "[" and last "]" from output
-      output = separator + output.substring(1, output.length-1);
-      separator = ',';
-      yield fs.appendFile(__dirname + '/output/locations.json', output);
+      // Add any vegan locations to output file
+      if (locations.length > 0) {
+        var output = util.format('%j', locations);
+        // Strip first "[" and last "]" from output
+        output = separator + output.substring(1, output.length-1);
+        separator = ',';
+        yield fs.appendFile(__dirname + '/output/locations.json', output);
+      }
     }
   }
 
-  // Write last ']' to file if program handled all entries
-  if (last_entry === 3000) {
-    yield fs.appendFile(__dirname + '/output/locations.json', ']');
-  }
+  // Write last ']' to file
+  yield fs.appendFile(__dirname + '/output/locations.json', ']');
+
+  // Log output
+  console.log('All regions have been fetched!'.success);
+  console.log('Import the data with the following command: '.info);
+  console.log('mongoimport -h host:port -d database -c entries -u username -p password --jsonArray output/locations.json'.code);
+  console.log('Also, make sure to log into the Mongo shell and issue the following command'.info);
+  console.log('db.entries.ensureIndex({location: "2dsphere"});'.code);
 })();
