@@ -1,6 +1,6 @@
 {
   "name": "vegguide-crawler",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "description": "Crawler to retrieve all locations from http://www.vegguide.org",
   "main": "index.js",
   "scripts": {
@@ -25,6 +25,8 @@
     "cloudinary": "~1.0.9",
     "colors": "~0.6.2",
     "stdio": "~0.1.5",
-    "html-md": "~3.0.2"
+    "html-md": "~3.0.2",
+    "cb2yield": "~0.1.1",
+    "co-prompt": "~1.0.0"
   }
 }

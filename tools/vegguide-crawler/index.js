@@ -1,9 +1,11 @@
-var cloudinary = require('cloudinary')
-  , colors     = require('colors')
+var cb2yield   = require('cb2yield')
+  , cloudinary = require('cloudinary')
   , co         = require('co')
+  , colors     = require('colors')
   , fs         = require('co-fs')
   , md         = require('html-md')
   , path       = require('path')
+  , prompt     = require('co-prompt')
   , request    = require('co-request')
   , stdio      = require('stdio')
   , util       = require('util')
@@ -48,49 +50,6 @@ var include = [
   , 'hours'
 ];
 
-// Convert a function from a callback-style function to a yieldable
-function cb2yield(fn, args) {
-  // Return function suitable for use in generators
-  return function(ffn) {
-    // Handle case where fn is not a valid function
-    if (!(fn instanceof Function)) {
-      throw "cb2yield requires a function as the first argument!";
-    }
-
-    args = args || [];
-    // Handle case where args is not an array
-    if (!Array.isArray(args)) {
-      throw "cb2yield requires an array as the second argument!";
-    }
-
-    // Define result function
-    var result_fn = function(result) {
-      ffn(null, result);
-    };
-
-    var new_args = [];
-    var cb_pushed = false;
-    for (var i=0; i<args.length; i++) {
-      // Push result_fn to index specified by placeholder object: {'cb2yield_cb_placeholder': null}
-      if (args[i] !== null && typeof args[i] === 'object' && args[i].hasOwnProperty('cb2yield_cb_placeholder')) {
-        new_args.push(result_fn);
-        cb_pushed = true;
-      }
-      else {
-        new_args.push(args[i]);
-      }
-    }
-
-    // If args does not contain a placeholder object, push result_fn to end of new_args
-    if (!cb_pushed) {
-      new_args.push(result_fn);
-    }
-
-    // Call fn with specified arguments
-    fn.apply(null, new_args);
-  };
-}
-
 /**
  * This function filters out all nonvegan entries & only includes the
  * properties in the include or localized_include arrays above.
@@ -105,18 +64,21 @@ function *filter(entries) {
       , 'text/md': md(long_desc['text/html'])
     };
   };
+
   var filtered_entries = [];
   for (var i=0; i<entries.length; i++) {
     var entry = entries[i];
     if (entry.veg_level === '5') {
       console.log(util.format('%s matches!', entry.name).debug);
       var filtered_entry = {};
+
       for (var j=0; j<include.length; j++) {
         var prop = include[j];
         if (entry.hasOwnProperty(prop)) {
           filtered_entry[prop] = entry[prop];
         }
       }
+
       for (var k=0; k<localized_include.length; k++) {
         var locprop = localized_include[k];
         filtered_entry[locprop] = {};
@@ -129,6 +91,7 @@ function *filter(entries) {
             handle_long_description(entry['localized_'+locprop]) : (entry['localized_'+locprop]);
         }
       }
+
       // Handle images specially
       filtered_entry.images  = [];
       if (entry.images) {
@@ -143,9 +106,11 @@ function *filter(entries) {
           filtered_entry.images.push(new_img);
         }
       }
+
       filtered_entries.push(filtered_entry);
     }
   }
+
   return filtered_entries;
 }
 
@@ -192,6 +157,7 @@ function *add(entries, names, conf) {
       }
     }
   }
+
   return entries;
 }
 
@@ -220,7 +186,11 @@ co(function* () {
 
   // Delete all existing images in cloudinary if user specified delete option
   if (ops.delete) {
-    yield cb2yield(cloudinary.api.delete_all_resources, []);
+    var confirm = yield prompt.confirm('Are you sure you want to delete all Cloudinary images? '.warning);
+    if (confirm) {
+      console.log('Deleting all images from cloudinary'.error);
+      yield cb2yield(cloudinary.api.delete_all_resources, []);
+    }
   }
 
   // Create output directory if it does not yet exist
