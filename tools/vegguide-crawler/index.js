@@ -223,7 +223,7 @@ co(function* () {
 
     // Handle invalid regions
     if (region.hasOwnProperty('regions')) {
-      console.error(util.format('Nonexistent region: %d', i));
+      console.error(util.format('Nonexistent region: %d', i).error);
       continue;
     }
 
