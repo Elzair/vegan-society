@@ -99,8 +99,8 @@ function *filter(entries) {
           var img = entry.images[m];
           var new_img = {caption: img.caption || '', mime_type: img.mime_type};
           // Upload original image to cloudinary and get resulting ID
-          //new_img.id = yield img_upload(img.files[3].uri);
-          var res = yield cb2yield(cloudinary.uploader.upload, [img.files[3].uri]);
+          var res = yield cb2yield(cloudinary.uploader.upload, [img.files[3].uri, 
+              {cb2yield_cb_placeholder: null}, {tags: ['entry_photos', 'vegguide_imports']}]);
           new_img.id = res.public_id;
           console.log(util.format('Uploaded "%s" to %s', new_img.caption, cloudinary.url(new_img.id)).info);
           filtered_entry.images.push(new_img);
@@ -150,6 +150,7 @@ function *add(entries, names, conf) {
       var gpsbody = JSON.parse(gpsresults.body);
       if (gpsbody.status === 'OK') {
         var loc = gpsbody.results[0].geometry.location;
+        // Store coordinates in GeoJSON format
         entry.location = {
             type: "Point"
           , coordinates: [loc.lng, loc.lat]
