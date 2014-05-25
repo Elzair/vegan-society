@@ -1,6 +1,6 @@
 {
   "name": "vegan-society",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Web App to grow the Vegan community",
   "main": "app.js",
   "scripts": {
@@ -38,14 +38,17 @@
     "monk": "~0.8.1",
     "co-fs": "~1.2.0",
     "angular-leaflet-directive": "~0.7.6",
-    "angular": "~1.2.16",
     "leaflet": "~0.7.2",
     "underscore": "~1.6.0",
     "haversine": "0.0.4",
     "angular-slide-menu": "~0.4.3",
     "cloudinary": "~1.0.9",
     "gulp": "~3.5.6",
-    "webpack": "~1.1.10"
+    "webpack": "~1.1.10",
+    "angular-module-touch": "~1.2.16",
+    "angular-module-resource": "~1.2.16",
+    "angular-module-route": "~1.2.16",
+    "angular-module-core": "~1.2.16"
   },
   "devDependencies": {
     "gulp": "~3.5.6",
