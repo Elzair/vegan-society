@@ -7,7 +7,7 @@ exports.index = function *() {
 };
 
 exports.entry = function *(name) {
-  var entry = yield entries.findOne({unique_name: name});
+  var entry = yield entries.findOne({unique_name: encodeURI(name)});
   this.response.body = yield render('entry', {host: global.host, entry: entry});
 };
 

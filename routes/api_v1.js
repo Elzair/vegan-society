@@ -1,11 +1,8 @@
 var entries   = require(__dirname + '/../models/entries')
-  //, imghost   = require(__dirname + '/../lib/imghost')
-  , cloudinary = require('cloudinary')
-  , fs = require('co-fs')
+  , imghost   = require(__dirname + '/../lib/imghost')
   ;
 
 exports.search = function *() {
-  cloudinary.config(JSON.parse(yield fs.readFile(__dirname+'/../conf/cloudinary.json', {encoding: 'utf8'})));
   // Handle invalid query
   if (!this.request.query.lat || !this.request.query.lng) {
     this.response.status = 406;
@@ -19,7 +16,6 @@ exports.search = function *() {
   var maxDistance = this.request.query.maxDistance ? parseInt(this.request.query.maxDistance, 10) : 50000;
   var point = {type: "Point", coordinates: [ lng, lat]};
   var ents = yield entries.find({location: {$near: {$geometry: point, $maxDistance: maxDistance}}});
-  //console.log(require('util').format('%j', ents));
 
   // Return only the listed fields
   var filtered_entries = [];
@@ -48,10 +44,9 @@ exports.search = function *() {
 
     // Return first image as thumbnail, if available
     if (ents[i].images && ents[i].images.length > 0 && ents[i].images[0].id !== undefined) {
-      console.log(cloudinary.url(ents[i].images[0].id, {width: 160, height: 100, crop: 'fill'}));
       new_entry.thumbnails = [
-          cloudinary.url(ents[i].images[0].id, {width: 160, height: 100, crop: 'fill'})
-        , cloudinary.url(ents[i].images[0].id, {width: 320, height: 200, crop: 'fill'})
+          imghost.url(ents[i].images[0].id, {width: 160, height: 100, crop: 'fill'})
+        , imghost.url(ents[i].images[0].id, {width: 320, height: 200, crop: 'fill'})
       ];
       new_entry.caption = ents[i].images[0].caption || '';
     }
@@ -72,37 +67,34 @@ exports.search = function *() {
 };
 
 exports.entry = function *(name) {
+  // Fetch entry
+  var entry = yield entries.findOne({unique_name: encodeURI(name)});
+
+  // Add imghost url to all images
+  for (var i=0; i<entry.images.length; i++) {
+    entry.images[i].url = imghost.url(entry.images[i].id, {width: 400, height: 400, crop: 'fill'});
+  }
+
   // Set response headers
   this.response.type = 'application/json';
   this.response.set('Access-Control-Allow-Origin', '*');
-
-  // Fetch entry
-  var entry = yield entries.findOne({unique_name: encodeURI(name)});
-  console.log(entry);
-
-  // Add cloudinary url to all images
-  for (var i=0; i<entry.images.length; i++) {
-    entry.images[i].url = cloudinary.url(entry.images[i].id, {width: 600, height: 375, crop: 'fill'});
-  }
 
   // Return JSON formatted data for specified entry
   this.response.body = entry;
 };
 
 exports.entry_by_id = function *(id) {
-  // Set response headers
-  this.response.type = 'application/json';
-  this.response.set('Access-Control-Allow-Origin', '*');
-
   // Fetch entry
   var entry = yield entries.findById(id);
 
-  // Add cloudinary url to all images
+  // Add imghost url to all images
   for (var i=0; i<entry.images.length; i++) {
-    entry.images[i].url = cloudinary.url(entry.images[i].id, {width: 600, height: 375, crop: 'fill'});
+    entry.images[i].url = imghost.url(entry.images[i].id, {width: 400, height: 400, crop: 'fill'});
   }
 
-  console.log(entry);
+  // Set response headers
+  this.response.type = 'application/json';
+  this.response.set('Access-Control-Allow-Origin', '*');
 
   // Return JSON formatted data for specified entry
   this.response.body = entry;

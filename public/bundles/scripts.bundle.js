@@ -187,7 +187,7 @@
 	  ,*/bounceMarker   = __webpack_require__(20)
 	  //, directives    = require('./directives')
 	  , haversine     = __webpack_require__(23)
-	  , L             = __webpack_require__(21)
+	  , Leaflet       = __webpack_require__(21)
 	  , mapServices   = __webpack_require__(19)
 	  , _             = __webpack_require__(24)
 	  ;

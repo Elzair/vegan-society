@@ -2,7 +2,7 @@ var /*angular     = require('angular')
   ,*/bounceMarker   = require('./bouncemarker')
   //, directives    = require('./directives')
   , haversine     = require('haversine')
-  , L             = require('leaflet')
+  , Leaflet       = require('leaflet')
   , mapServices   = require('./services')
   , _             = require('underscore')
   ;
