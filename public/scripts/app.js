@@ -7,6 +7,7 @@ var angularCore      = require('angular-module-core')
   , filters          = require('./filters')
   , interpolate      = require('./interpolate')
   , mapControllers   = require('./map-controllers')
+  , mapServices      = require('./services')
   , slideMenu        = require('angular-slide-menu')
   ;
 

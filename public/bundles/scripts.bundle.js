@@ -56,12 +56,13 @@
 	  , angularResource  = __webpack_require__(15)
 	  , angularRoute     = __webpack_require__(16)
 	  , angularTouch     = __webpack_require__(17)
-	  , directives       = __webpack_require__(2)
-	  , entryControllers = __webpack_require__(3)
-	  , filters          = __webpack_require__(4)
-	  , interpolate      = __webpack_require__(5)
-	  , mapControllers   = __webpack_require__(6)
-	  , slideMenu        = __webpack_require__(22)
+	  , directives       = __webpack_require__(26)
+	  , entryControllers = __webpack_require__(2)
+	  , filters          = __webpack_require__(3)
+	  , interpolate      = __webpack_require__(4)
+	  , mapControllers   = __webpack_require__(5)
+	  , mapServices      = __webpack_require__(6)
+	  , slideMenu        = __webpack_require__(21)
 	  ;
 
 	var mapApp = angular.module('mapApp', [
@@ -106,29 +107,7 @@
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var directives = angular.module('directives', []);
-
-	directives.directive('vsPopup', function($compile) {
-	  return {
-	      restrict: 'AEC'
-	    , templateUrl: '/templates/popup.html'
-	    , link: function(scope, element, attr) {
-	        console.log(attr);
-	        var loc_id = parseInt(attr.location, 10);
-	        scope.info = scope.locations[loc_id];
-	        $compile(element.contents())(scope);
-	      }
-	  };
-	});
-
-
-/***/ },
-/* 3 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var /*angular     = require('angular')
-	  , */carousel       = __webpack_require__(18)
-	  , mapServices   = __webpack_require__(19)
+	var carousel       = __webpack_require__(18)
 	  ;
 
 	var entryControllers = angular.module('entryControllers', ['angular-carousel', 'mapServices']);
@@ -155,7 +134,7 @@
 
 
 /***/ },
-/* 4 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var filters = angular.module('filters', []);
@@ -168,10 +147,8 @@
 
 
 /***/ },
-/* 5 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
-
-	//var angular = require('angular');
 
 	var interpolate = angular.module('interpolate', [], function($interpolateProvider) {
 	  $interpolateProvider.startSymbol('[[');
@@ -180,16 +157,13 @@
 
 
 /***/ },
-/* 6 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var /*angular     = require('angular')
-	  ,*/bounceMarker   = __webpack_require__(20)
-	  //, directives    = require('./directives')
-	  , haversine     = __webpack_require__(23)
-	  , Leaflet       = __webpack_require__(21)
-	  , mapServices   = __webpack_require__(19)
-	  , _             = __webpack_require__(24)
+	var bounceMarker  = __webpack_require__(19)
+	  , haversine     = __webpack_require__(22)
+	  , L             = __webpack_require__(20)
+	  , _             = __webpack_require__(23)
 	  ;
 
 	var mapControllers = angular.module('mapControllers', [
@@ -370,6 +344,43 @@
 
 	      // Try to find user's current location
 	      map.locate({setView: true, maxZoom: 14});
+	    }
+	]);
+
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var mapServices = angular.module('mapServices', ['ngResource']);
+
+	mapServices.factory('Locations', ['$resource', 
+	    function($resource) {
+	      var host = document.querySelector("#host").innerHTML;
+	      console.log(host);
+	      return $resource('http://' + host + '/api/v1/search?lat=:lat&lng=:lng', {}, {
+	        search: {method: 'GET', responseType: 'json', isArray: true}
+	      });
+	    }
+	]);
+
+	mapServices.factory('EntryInfo', ['$resource',
+	    function($resource) {
+	      var host = document.querySelector("#host").innerHTML;
+	      console.log(host);
+	      return $resource('http://' + host + '/api/v1/entry/:name', {}, {
+	        get: {method: 'GET', responseType: 'json'}
+	      });
+	    }
+	]);
+
+	mapServices.factory('EntryInfoById', ['$resource',
+	    function($resource) {
+	      var host = document.querySelector("#host").innerHTML;
+	      console.log(host);
+	      return $resource('http://' + host + '/api/v1/entry/by-id/:id', {}, {
+	        get: {method: 'GET', responseType: 'json'}
+	      });
 	    }
 	]);
 
@@ -24519,46 +24530,7 @@
 /* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	//var angular = require('angular');
-
-	var mapServices = angular.module('mapServices', ['ngResource']);
-
-	mapServices.factory('Locations', ['$resource', 
-	    function($resource) {
-	      var host = document.querySelector("#host").innerHTML;
-	      console.log(host);
-	      return $resource('http://' + host + '/api/v1/search?lat=:lat&lng=:lng', {}, {
-	        search: {method: 'GET', responseType: 'json', isArray: true}
-	      });
-	    }
-	]);
-
-	mapServices.factory('EntryInfo', ['$resource',
-	    function($resource) {
-	      var host = document.querySelector("#host").innerHTML;
-	      console.log(host);
-	      return $resource('http://' + host + '/api/v1/entry/:name', {}, {
-	        get: {method: 'GET', responseType: 'json'}
-	      });
-	    }
-	]);
-
-	mapServices.factory('EntryInfoById', ['$resource',
-	    function($resource) {
-	      var host = document.querySelector("#host").innerHTML;
-	      console.log(host);
-	      return $resource('http://' + host + '/api/v1/entry/by-id/:id', {}, {
-	        get: {method: 'GET', responseType: 'json'}
-	      });
-	    }
-	]);
-
-
-/***/ },
-/* 20 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var L = __webpack_require__(21);
+	__webpack_require__(20);
 	/**
 	 * Copyright (C) 2013 Maxime Hadjinlian <maxime.hadjinlian@gmail.com>
 	 * All Rights Reserved.
@@ -24751,7 +24723,7 @@
 
 
 /***/ },
-/* 21 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
@@ -33925,7 +33897,7 @@
 	}(window, document));
 
 /***/ },
-/* 22 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/******/ (function(modules) { // webpackBootstrap
@@ -34289,7 +34261,7 @@
 	*/
 
 /***/ },
-/* 23 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// haversine
@@ -34331,7 +34303,7 @@
 	module.exports = haversine
 
 /***/ },
-/* 24 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.6.0
@@ -35677,6 +35649,28 @@
 	    }.apply(null, __WEBPACK_AMD_DEFINE_ARRAY__)), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	  }
 	}).call(this);
+
+
+/***/ },
+/* 24 */,
+/* 25 */,
+/* 26 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var directives = angular.module('directives', []);
+
+	directives.directive('vsPopup', function($compile) {
+	  return {
+	      restrict: 'AEC'
+	    , templateUrl: '/templates/popup.html'
+	    , link: function(scope, element, attr) {
+	        console.log(attr);
+	        var loc_id = parseInt(attr.location, 10);
+	        scope.info = scope.locations[loc_id];
+	        $compile(element.contents())(scope);
+	      }
+	  };
+	});
 
 
 /***/ }

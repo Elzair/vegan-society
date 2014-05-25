@@ -1,9 +1,6 @@
-var /*angular     = require('angular')
-  ,*/bounceMarker   = require('./bouncemarker')
-  //, directives    = require('./directives')
+var bounceMarker  = require('./bouncemarker')
   , haversine     = require('haversine')
-  , Leaflet       = require('leaflet')
-  , mapServices   = require('./services')
+  , L             = require('leaflet')
   , _             = require('underscore')
   ;
 

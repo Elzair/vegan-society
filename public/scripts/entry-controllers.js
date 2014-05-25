@@ -1,6 +1,4 @@
-var /*angular     = require('angular')
-  , */carousel       = require('./angular-carousel')
-  , mapServices   = require('./services')
+var carousel       = require('./angular-carousel')
   ;
 
 var entryControllers = angular.module('entryControllers', ['angular-carousel', 'mapServices']);

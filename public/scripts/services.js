@@ -1,5 +1,3 @@
-//var angular = require('angular');
-
 var mapServices = angular.module('mapServices', ['ngResource']);
 
 mapServices.factory('Locations', ['$resource', 

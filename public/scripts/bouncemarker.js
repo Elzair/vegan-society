@@ -1,4 +1,4 @@
-var L = require('leaflet');
+require('leaflet');
 /**
  * Copyright (C) 2013 Maxime Hadjinlian <maxime.hadjinlian@gmail.com>
  * All Rights Reserved.
