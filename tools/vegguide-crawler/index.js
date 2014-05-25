@@ -252,5 +252,5 @@ co(function* () {
   console.log('Import the data with the following command:'.info);
   console.log(util.format('mongoimport -h host:port -d db_name -c entries -u username -p password --jsonArray %s', output_path).code);
   console.log('Also, make sure to log into the Mongo shell and issue the following command:'.info);
-  console.log('use db_name; db.entries.ensureIndex({location: "2dsphere"});'.code);
+  console.log('db.entries.ensureIndex({location: "2dsphere"});'.code);
 })();
