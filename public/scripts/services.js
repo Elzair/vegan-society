@@ -12,11 +12,21 @@ mapServices.factory('Locations', ['$resource',
     }
 ]);
 
-mapServices.factory('LocationInfo', ['$resource',
+mapServices.factory('EntryInfo', ['$resource',
     function($resource) {
       var host = document.querySelector("#host").innerHTML;
       console.log(host);
-      return $resource('http://' + host + '/api/v1/location/:id', {}, {
+      return $resource('http://' + host + '/api/v1/entry/:name', {}, {
+        get: {method: 'GET', responseType: 'json'}
+      });
+    }
+]);
+
+mapServices.factory('EntryInfoById', ['$resource',
+    function($resource) {
+      var host = document.querySelector("#host").innerHTML;
+      console.log(host);
+      return $resource('http://' + host + '/api/v1/entry/by-id/:id', {}, {
         get: {method: 'GET', responseType: 'json'}
       });
     }

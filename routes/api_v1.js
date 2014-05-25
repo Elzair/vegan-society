@@ -19,7 +19,7 @@ exports.search = function *() {
   var maxDistance = this.request.query.maxDistance ? parseInt(this.request.query.maxDistance, 10) : 50000;
   var point = {type: "Point", coordinates: [ lng, lat]};
   var ents = yield entries.find({location: {$near: {$geometry: point, $maxDistance: maxDistance}}});
-  console.log(require('util').format('%j', ents));
+  //console.log(require('util').format('%j', ents));
 
   // Return only the listed fields
   var filtered_entries = [];
@@ -35,6 +35,7 @@ exports.search = function *() {
     , 'postal_code'
     , 'region'
     , 'short_description'
+    , 'unique_name'
   ];
 
   for (var i=0; i<ents.length; i++) {
@@ -70,12 +71,39 @@ exports.search = function *() {
   this.response.body = JSON.stringify(filtered_entries);
 };
 
-exports.location = function *(id) {
+exports.entry = function *(name) {
   // Set response headers
   this.response.type = 'application/json';
   this.response.set('Access-Control-Allow-Origin', '*');
 
+  // Fetch entry
+  var entry = yield entries.findOne({unique_name: encodeURI(name)});
+  console.log(entry);
+
+  // Add cloudinary url to all images
+  for (var i=0; i<entry.images.length; i++) {
+    entry.images[i].url = cloudinary.url(entry.images[i].id, {width: 600, height: 375, crop: 'fill'});
+  }
+
   // Return JSON formatted data for specified entry
-  this.response.body = yield entries.findById(id);
+  this.response.body = entry;
 };
 
+exports.entry_by_id = function *(id) {
+  // Set response headers
+  this.response.type = 'application/json';
+  this.response.set('Access-Control-Allow-Origin', '*');
+
+  // Fetch entry
+  var entry = yield entries.findById(id);
+
+  // Add cloudinary url to all images
+  for (var i=0; i<entry.images.length; i++) {
+    entry.images[i].url = cloudinary.url(entry.images[i].id, {width: 600, height: 375, crop: 'fill'});
+  }
+
+  console.log(entry);
+
+  // Return JSON formatted data for specified entry
+  this.response.body = entry;
+};

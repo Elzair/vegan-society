@@ -24,8 +24,10 @@ app.use(serve(__dirname + '/public'));
 
 // Route middleware
 app.use(route.get('/', routes.index));
-app.use(route.get('/location/:id', routes.location));
-app.use(route.get('/api/v1/location/:id', api_v1.location));
+app.use(route.get('/entry/:name', routes.entry));
+app.use(route.get('/entry/by-id/:id', routes.entry_by_id));
+app.use(route.get('/api/v1/entry/:name', api_v1.entry));
+app.use(route.get('/api/v1/entry/by-id/:id', api_v1.entry_by_id));
 app.use(route.get('/api/v1/search', api_v1.search));
 
 // Get host and port

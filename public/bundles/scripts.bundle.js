@@ -53,12 +53,12 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular          = require('angular')
-	  , */directives       = __webpack_require__(2)
-	  , entryControllers = __webpack_require__(3)
-	  , filters          = __webpack_require__(4)
-	  , interpolate      = __webpack_require__(5)
-	  , mapControllers   = __webpack_require__(6)
-	  , slideMenu        = __webpack_require__(18)
+	  , */directives       = __webpack_require__(7)
+	  , entryControllers = __webpack_require__(8)
+	  , filters          = __webpack_require__(9)
+	  , interpolate      = __webpack_require__(10)
+	  , mapControllers   = __webpack_require__(11)
+	  , slideMenu        = __webpack_require__(17)
 	  ;
 
 	var mapApp = angular.module('mapApp', [
@@ -74,9 +74,13 @@
 	mapApp.config(['$routeProvider', '$locationProvider',
 	    function($routeProvider, $locationProvider) {
 	      $routeProvider
-	        .when('/location/:id', {
+	        .when('/entry/:name', {
 	            templateUrl: '/templates/entry.html'
 	          , controller: 'EntryCtrl'
+	        })
+	        .when('/entry/by-id/:id', {
+	            templateUrl: '/templates/entry.html'
+	          , constroller: 'EntryByIdCtrl'
 	        })
 	        .when('/', {
 	            templateUrl: '/templates/map.html'
@@ -96,7 +100,12 @@
 
 
 /***/ },
-/* 2 */
+/* 2 */,
+/* 3 */,
+/* 4 */,
+/* 5 */,
+/* 6 */,
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var directives = angular.module('directives', []);
@@ -116,19 +125,29 @@
 
 
 /***/ },
-/* 3 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
-	  , */carousel       = __webpack_require__(13)
-	  , mapServices   = __webpack_require__(14)
+	  , */carousel       = __webpack_require__(14)
+	  , mapServices   = __webpack_require__(15)
 	  ;
 
 	var entryControllers = angular.module('entryControllers', ['angular-carousel', 'mapServices']);
 
-	entryControllers.controller('EntryCtrl', ['$scope', '$routeParams', '$sce', 'LocationInfo',
-	    function($scope, $routeParams, $sce, LocationInfo) {
-	      LocationInfo.get({id: $routeParams.id}).$promise.then(function(info) {
+	entryControllers.controller('EntryCtrl', ['$scope', '$routeParams', '$sce', 'EntryInfo',
+	    function($scope, $routeParams, $sce, EntryInfo) {
+	      EntryInfo.get({name: $routeParams.name}).$promise.then(function(info) {
+	        info.address = (info.address2 !== undefined) ? info.address1.en_us + ', ' + info.address2.en_us : info.address1.en_us;
+	        $scope.info = info;
+	        $scope.description = $sce.trustAsHtml(info.long_description.en_us['text/html']);
+	      });
+	    }
+	]);
+
+	entryControllers.controller('EntryByIdCtrl', ['$scope', '$routeParams', '$sce', 'EntryInfoById',
+	    function($scope, $routeParams, $sce, EntryInfoById) {
+	      EntryInfoById.get({id: $routeParams.id}).$promise.then(function(info) {
 	        info.address = (info.address2 !== undefined) ? info.address1.en_us + ', ' + info.address2.en_us : info.address1.en_us;
 	        $scope.info = info;
 	        $scope.description = $sce.trustAsHtml(info.long_description.en_us['text/html']);
@@ -138,7 +157,7 @@
 
 
 /***/ },
-/* 4 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var filters = angular.module('filters', []);
@@ -151,7 +170,7 @@
 
 
 /***/ },
-/* 5 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var angular = require('angular');
@@ -163,15 +182,15 @@
 
 
 /***/ },
-/* 6 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var /*angular     = require('angular')
 	  ,*/bounceMarker   = __webpack_require__(16)
 	  //, directives    = require('./directives')
 	  , haversine     = __webpack_require__(20)
-	  , L             = __webpack_require__(17)
-	  , mapServices   = __webpack_require__(14)
+	  , L             = __webpack_require__(18)
+	  , mapServices   = __webpack_require__(15)
 	  , _             = __webpack_require__(19)
 	  ;
 
@@ -193,7 +212,7 @@
 	      $scope.locations = [];
 
 	      // Initialize popup template
-	      var template = _.template("<h2 class=\"heading <%= popup_class %>\"><%= name.en_us %></h2> <div class=\"body-content <%= popup_class %>\"><div class=\"body-text\"><p><%= short_description.en_us %></p><p id=\"distance\"><%= distance %> <%= unit %></p><a href=\"<%= hash %>/location/<%= _id['$old'] %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
+	      var template = _.template("<h2 class=\"heading <%= popup_class %>\"><%= name.en_us %></h2> <div class=\"body-content <%= popup_class %>\"><div class=\"body-text\"><p><%= short_description.en_us %></p><p id=\"distance\"><%= distance %> <%= unit %></p><a href=\"<%= hash %>/entry/<%= unique_name %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
 
 	      function find_nearby_locations(lat, lng) {
 	        // Use 64 pixels for a retina display and 32 pixels otherwise
@@ -358,13 +377,9 @@
 
 
 /***/ },
-/* 7 */,
-/* 8 */,
-/* 9 */,
-/* 10 */,
-/* 11 */,
 /* 12 */,
-/* 13 */
+/* 13 */,
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -899,7 +914,7 @@
 
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var angular = require('angular');
@@ -916,11 +931,21 @@
 	    }
 	]);
 
-	mapServices.factory('LocationInfo', ['$resource',
+	mapServices.factory('EntryInfo', ['$resource',
 	    function($resource) {
 	      var host = document.querySelector("#host").innerHTML;
 	      console.log(host);
-	      return $resource('http://' + host + '/api/v1/location/:id', {}, {
+	      return $resource('http://' + host + '/api/v1/entry/:name', {}, {
+	        get: {method: 'GET', responseType: 'json'}
+	      });
+	    }
+	]);
+
+	mapServices.factory('EntryInfoById', ['$resource',
+	    function($resource) {
+	      var host = document.querySelector("#host").innerHTML;
+	      console.log(host);
+	      return $resource('http://' + host + '/api/v1/entry/by-id/:id', {}, {
 	        get: {method: 'GET', responseType: 'json'}
 	      });
 	    }
@@ -928,11 +953,10 @@
 
 
 /***/ },
-/* 15 */,
 /* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var L = __webpack_require__(17);
+	var L = __webpack_require__(18);
 	/**
 	 * Copyright (C) 2013 Maxime Hadjinlian <maxime.hadjinlian@gmail.com>
 	 * All Rights Reserved.
@@ -1126,6 +1150,370 @@
 
 /***/ },
 /* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/******/ (function(modules) { // webpackBootstrap
+	/******/ 	
+	/******/ 	// The module cache
+	/******/ 	var installedModules = {};
+	/******/ 	
+	/******/ 	// The require function
+	/******/ 	function __webpack_require__(moduleId) {
+	/******/ 		// Check if module is in cache
+	/******/ 		if(installedModules[moduleId])
+	/******/ 			return installedModules[moduleId].exports;
+	/******/ 		
+	/******/ 		// Create a new module (and put it into the cache)
+	/******/ 		var module = installedModules[moduleId] = {
+	/******/ 			exports: {},
+	/******/ 			id: moduleId,
+	/******/ 			loaded: false
+	/******/ 		};
+	/******/ 		
+	/******/ 		// Execute the module function
+	/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+	/******/ 		
+	/******/ 		// Flag the module as loaded
+	/******/ 		module.loaded = true;
+	/******/ 		
+	/******/ 		// Return the exports of the module
+	/******/ 		return module.exports;
+	/******/ 	}
+	/******/ 	
+	/******/ 	
+	/******/ 	// expose the modules object (__webpack_modules__)
+	/******/ 	__webpack_require__.m = modules;
+	/******/ 	
+	/******/ 	// expose the module cache
+	/******/ 	__webpack_require__.c = installedModules;
+	/******/ 	
+	/******/ 	// __webpack_public_path__
+	/******/ 	__webpack_require__.p = "";
+	/******/ 	
+	/******/ 	
+	/******/ 	// Load entry module and return exports
+	/******/ 	return __webpack_require__(0);
+	/******/ })
+	/************************************************************************/
+	/******/ ([
+	/* 0 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		__webpack_require__(1);
+		module.exports = __webpack_require__(2);
+
+
+	/***/ },
+	/* 1 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		var slideMenu = angular.module('slideMenu', []);
+		
+		slideMenu.factory('asmService', ['$rootScope', function($rootScope) {
+		  return {
+		      // This object tracks the status of each window and whether or not
+		      // it must be the only active window at a given time 
+		      asmStates: {
+		          'slideLeft': {active: false, exclusive: false}
+		        , 'slideRight': {active: false, exclusive: false}
+		        , 'slideTop': {active: false, exclusive: false}
+		        , 'slideBottom': {active: false, exclusive: false}
+		        , 'pushLeft': {active: false, exclusive: true}
+		        , 'pushRight': {active: false, exclusive: true}
+		        , 'pushTop': {active: false, exclusive: true}
+		        , 'pushBottom': {active: false, exclusive: true}
+		      }
+		
+		      // This object tracks whether or not to push the asm-wrapper
+		    , asmPush: null
+		
+		      /** This function toggles one of the menus listed in asmStates from 
+		       *  active to inactive and vice-versa based on certain criteria.
+		       *  @param menuKey the menu to attempt to toggle
+		       */
+		    , toggle: function(menuKey) {
+		        if (this.asmStates.hasOwnProperty(menuKey)) {
+		          var menuValue = this.asmStates[menuKey];
+		          var canToggle = true;
+		          var key = null
+		          for (key in this.asmStates) {
+		            var value = this.asmStates[key];
+		            // Ensure that no other exclusive menus are active, and do not 
+		            // activate an exclusive menu if any other menu is active.
+		            //if (key === menuKey) {
+		            //  continue;
+		            //}
+		            if ((key !== menuKey) && (value.active && (value.exclusive || menuValue.exclusive))) {
+		              canToggle = false;
+		              break;
+		            }
+		          }
+		          if (canToggle) {
+		            this.asmStates[menuKey].active = !this.asmStates[menuKey].active;
+		            // Update asm-wrapper on whether it needs pushing aside
+		            console.log(menuKey.substring(4).toLowerCase());
+		            this.asmPush = (menuKey.substring(0, 4) === 'push' && this.asmStates[menuKey].active) 
+		              ? menuKey.substring(4).toLowerCase() : null;
+		            console.log(this.asmPush);
+		            console.log(menuKey + ' active: ' + this.asmStates[menuKey].active);
+		            // Emit event
+		            $rootScope.$emit('asmEvent', null);
+		          }
+		          else {
+		            console.log('Cannot toggle!');
+		          }
+		        } 
+		        else {
+		          console.log('Unknown menu!');
+		        }
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmSlideLeft', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-horizontal asm-left');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.slideLeft.active) {
+		            element.addClass('asm-left-open');
+		          }
+		          else {
+		            element.removeClass('asm-left-open');
+		          }
+		        });
+		      }
+		  }
+		}]);
+		
+		slideMenu.directive('asmPushLeft', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-horizontal asm-left');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.pushLeft.active) {
+		            element.addClass('asm-left-open');
+		          }
+		          else {
+		            element.removeClass('asm-left-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmSlideRight', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-horizontal asm-right');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.slideRight.active) {
+		            element.addClass('asm-right-open');
+		          }
+		          else {
+		            element.removeClass('asm-right-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmPushRight', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-horizontal asm-right');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.pushRight.active) {
+		            element.addClass('asm-right-open');
+		          }
+		          else {
+		            element.removeClass('asm-right-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmSlideTop', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-vertical asm-top');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.slideTop.active) {
+		            element.addClass('asm-top-open');
+		          }
+		          else {
+		            element.removeClass('asm-top-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmPushTop', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-vertical asm-top');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.pushTop.active) {
+		            element.addClass('asm-top-open');
+		          }
+		          else {
+		            element.removeClass('asm-top-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmSlideBottom', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-vertical asm-bottom');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.slideBottom.active) {
+		            element.addClass('asm-bottom-open');
+		          }
+		          else {
+		            element.removeClass('asm-bottom-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmPushBottom', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-vertical asm-bottom');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.pushBottom.active) {
+		            element.addClass('asm-bottom-open');
+		          }
+		          else {
+		            element.removeClass('asm-bottom-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmWrapper', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm-wrapper asm-body-closed');
+		        $rootScope.$on('asmEvent', function() {
+		          console.log('Body Caught Event: ' + asmService.asmPush);
+		          switch(asmService.asmPush) {
+		            case 'left':
+		              element.removeClass('asm-body-closed');
+		              element.addClass('asm-body-push-left');
+		              break;
+		            case 'right':
+		              element.removeClass('asm-body-closed');
+		              element.addClass('asm-body-push-right');
+		              break;
+		            case 'top':
+		              element.removeClass('asm-body-closed');
+		              element.addClass('asm-body-push-top');
+		              break;
+		            case 'bottom':
+		              element.removeClass('asm-body-closed');
+		              element.addClass('asm-body-push-bottom');
+		              break;
+		            default:
+		              element.removeClass('asm-body-push-left asm-body-push-right asm-body-push-top asm-body-push-bottom');
+		              element.addClass('asm-body-closed');
+		              break;
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmControl', ['asmService', function(asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , compile: function(element, attrs) {
+		        element[0].innerHTML = '<a href="#">' + element[0].innerHTML + '</a>';
+		        return {
+		            pre: function preLink(scope, iElement, iAttrs) {
+		            }
+		          , post: function postLink(scope, iElement, iAttrs) {
+		              iElement.find('a').on('click', function(ev) {
+		                ev.preventDefault();
+		                asmService.toggle(attrs.menu);
+		              });
+		            }
+		        };
+		      }
+		  };
+		}]);
+
+
+	/***/ },
+	/* 2 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		// style-loader: Adds some css to the DOM by adding a <style> tag
+		var dispose = __webpack_require__(4)
+			// The css code:
+			(__webpack_require__(3))
+		if(false) {
+			module.hot.accept();
+			module.hot.dispose(dispose);
+		}
+
+	/***/ },
+	/* 3 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		module.exports =
+			".asm-wrapper {\n  position: relative;\n  top: 0;\n  left: 0;\n  z-index: 10;\n}\n#asm-mask {\n  position: fixed;\n  top: 0;\n  left: 0;\n  z-index: 9998;\n  width: 100%;\n  height: 100%;\n  background: rgba(0,0,0,0.8);\n}\n.asm {\n  position: fixed;\n  z-index: 9999;\n  overflow: hidden;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-horizontal {\n  top: 0;\n  width: 300px;\n  height: 100%;\n}\n.asm-vertical {\n  left: 0;\n  width: 100%;\n  height: 100px;\n}\n.asm-body-closed {\n  left: 0;\n  top: 0;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-left {\n  left: -300px;\n}\n.asm-left-open {\n  left: 0;\n}\n.asm-body-push-left {\n  left: 300px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-right {\n  right: -300px;\n}\n.asm-right-open {\n  right: 0;\n}\n.asm-body-push-right {\n  left: -300px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-top {\n  top: -100px;\n}\n.asm-top-open {\n  top: 0;\n}\n.asm-body-push-top {\n  top: 100px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-bottom {\n  bottom: -100px;\n}\n.asm-bottom-open {\n  bottom: 0;\n}\n.asm-body-push-bottom {\n  top: -100px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n";
+
+	/***/ },
+	/* 4 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		/*
+			MIT License http://www.opensource.org/licenses/mit-license.php
+			Author Tobias Koppers @sokra
+		*/
+		module.exports = function addStyle(cssCode) {
+			if(true) {
+				if(typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
+			}
+			var styleElement = document.createElement("style");
+			styleElement.type = "text/css";
+			if (styleElement.styleSheet) {
+				styleElement.styleSheet.cssText = cssCode;
+			} else {
+				styleElement.appendChild(document.createTextNode(cssCode));
+			}
+			var head = document.getElementsByTagName("head")[0];
+			head.appendChild(styleElement);
+			return function() {
+				head.removeChild(styleElement);
+			};
+		}
+
+	/***/ }
+	/******/ ])
+	/*
+	//@ sourceMappingURL=angular-slide-menu.js.map
+	*/
+
+/***/ },
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
@@ -10297,370 +10685,6 @@
 
 
 	}(window, document));
-
-/***/ },
-/* 18 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/******/ (function(modules) { // webpackBootstrap
-	/******/ 	
-	/******/ 	// The module cache
-	/******/ 	var installedModules = {};
-	/******/ 	
-	/******/ 	// The require function
-	/******/ 	function __webpack_require__(moduleId) {
-	/******/ 		// Check if module is in cache
-	/******/ 		if(installedModules[moduleId])
-	/******/ 			return installedModules[moduleId].exports;
-	/******/ 		
-	/******/ 		// Create a new module (and put it into the cache)
-	/******/ 		var module = installedModules[moduleId] = {
-	/******/ 			exports: {},
-	/******/ 			id: moduleId,
-	/******/ 			loaded: false
-	/******/ 		};
-	/******/ 		
-	/******/ 		// Execute the module function
-	/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-	/******/ 		
-	/******/ 		// Flag the module as loaded
-	/******/ 		module.loaded = true;
-	/******/ 		
-	/******/ 		// Return the exports of the module
-	/******/ 		return module.exports;
-	/******/ 	}
-	/******/ 	
-	/******/ 	
-	/******/ 	// expose the modules object (__webpack_modules__)
-	/******/ 	__webpack_require__.m = modules;
-	/******/ 	
-	/******/ 	// expose the module cache
-	/******/ 	__webpack_require__.c = installedModules;
-	/******/ 	
-	/******/ 	// __webpack_public_path__
-	/******/ 	__webpack_require__.p = "";
-	/******/ 	
-	/******/ 	
-	/******/ 	// Load entry module and return exports
-	/******/ 	return __webpack_require__(0);
-	/******/ })
-	/************************************************************************/
-	/******/ ([
-	/* 0 */
-	/***/ function(module, exports, __webpack_require__) {
-
-		__webpack_require__(1);
-		module.exports = __webpack_require__(2);
-
-
-	/***/ },
-	/* 1 */
-	/***/ function(module, exports, __webpack_require__) {
-
-		var slideMenu = angular.module('slideMenu', []);
-		
-		slideMenu.factory('asmService', ['$rootScope', function($rootScope) {
-		  return {
-		      // This object tracks the status of each window and whether or not
-		      // it must be the only active window at a given time 
-		      asmStates: {
-		          'slideLeft': {active: false, exclusive: false}
-		        , 'slideRight': {active: false, exclusive: false}
-		        , 'slideTop': {active: false, exclusive: false}
-		        , 'slideBottom': {active: false, exclusive: false}
-		        , 'pushLeft': {active: false, exclusive: true}
-		        , 'pushRight': {active: false, exclusive: true}
-		        , 'pushTop': {active: false, exclusive: true}
-		        , 'pushBottom': {active: false, exclusive: true}
-		      }
-		
-		      // This object tracks whether or not to push the asm-wrapper
-		    , asmPush: null
-		
-		      /** This function toggles one of the menus listed in asmStates from 
-		       *  active to inactive and vice-versa based on certain criteria.
-		       *  @param menuKey the menu to attempt to toggle
-		       */
-		    , toggle: function(menuKey) {
-		        if (this.asmStates.hasOwnProperty(menuKey)) {
-		          var menuValue = this.asmStates[menuKey];
-		          var canToggle = true;
-		          var key = null
-		          for (key in this.asmStates) {
-		            var value = this.asmStates[key];
-		            // Ensure that no other exclusive menus are active, and do not 
-		            // activate an exclusive menu if any other menu is active.
-		            //if (key === menuKey) {
-		            //  continue;
-		            //}
-		            if ((key !== menuKey) && (value.active && (value.exclusive || menuValue.exclusive))) {
-		              canToggle = false;
-		              break;
-		            }
-		          }
-		          if (canToggle) {
-		            this.asmStates[menuKey].active = !this.asmStates[menuKey].active;
-		            // Update asm-wrapper on whether it needs pushing aside
-		            console.log(menuKey.substring(4).toLowerCase());
-		            this.asmPush = (menuKey.substring(0, 4) === 'push' && this.asmStates[menuKey].active) 
-		              ? menuKey.substring(4).toLowerCase() : null;
-		            console.log(this.asmPush);
-		            console.log(menuKey + ' active: ' + this.asmStates[menuKey].active);
-		            // Emit event
-		            $rootScope.$emit('asmEvent', null);
-		          }
-		          else {
-		            console.log('Cannot toggle!');
-		          }
-		        } 
-		        else {
-		          console.log('Unknown menu!');
-		        }
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmSlideLeft', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-horizontal asm-left');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.slideLeft.active) {
-		            element.addClass('asm-left-open');
-		          }
-		          else {
-		            element.removeClass('asm-left-open');
-		          }
-		        });
-		      }
-		  }
-		}]);
-		
-		slideMenu.directive('asmPushLeft', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-horizontal asm-left');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.pushLeft.active) {
-		            element.addClass('asm-left-open');
-		          }
-		          else {
-		            element.removeClass('asm-left-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmSlideRight', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-horizontal asm-right');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.slideRight.active) {
-		            element.addClass('asm-right-open');
-		          }
-		          else {
-		            element.removeClass('asm-right-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmPushRight', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-horizontal asm-right');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.pushRight.active) {
-		            element.addClass('asm-right-open');
-		          }
-		          else {
-		            element.removeClass('asm-right-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmSlideTop', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-vertical asm-top');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.slideTop.active) {
-		            element.addClass('asm-top-open');
-		          }
-		          else {
-		            element.removeClass('asm-top-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmPushTop', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-vertical asm-top');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.pushTop.active) {
-		            element.addClass('asm-top-open');
-		          }
-		          else {
-		            element.removeClass('asm-top-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmSlideBottom', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-vertical asm-bottom');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.slideBottom.active) {
-		            element.addClass('asm-bottom-open');
-		          }
-		          else {
-		            element.removeClass('asm-bottom-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmPushBottom', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-vertical asm-bottom');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.pushBottom.active) {
-		            element.addClass('asm-bottom-open');
-		          }
-		          else {
-		            element.removeClass('asm-bottom-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmWrapper', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm-wrapper asm-body-closed');
-		        $rootScope.$on('asmEvent', function() {
-		          console.log('Body Caught Event: ' + asmService.asmPush);
-		          switch(asmService.asmPush) {
-		            case 'left':
-		              element.removeClass('asm-body-closed');
-		              element.addClass('asm-body-push-left');
-		              break;
-		            case 'right':
-		              element.removeClass('asm-body-closed');
-		              element.addClass('asm-body-push-right');
-		              break;
-		            case 'top':
-		              element.removeClass('asm-body-closed');
-		              element.addClass('asm-body-push-top');
-		              break;
-		            case 'bottom':
-		              element.removeClass('asm-body-closed');
-		              element.addClass('asm-body-push-bottom');
-		              break;
-		            default:
-		              element.removeClass('asm-body-push-left asm-body-push-right asm-body-push-top asm-body-push-bottom');
-		              element.addClass('asm-body-closed');
-		              break;
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmControl', ['asmService', function(asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , compile: function(element, attrs) {
-		        element[0].innerHTML = '<a href="#">' + element[0].innerHTML + '</a>';
-		        return {
-		            pre: function preLink(scope, iElement, iAttrs) {
-		            }
-		          , post: function postLink(scope, iElement, iAttrs) {
-		              iElement.find('a').on('click', function(ev) {
-		                ev.preventDefault();
-		                asmService.toggle(attrs.menu);
-		              });
-		            }
-		        };
-		      }
-		  };
-		}]);
-
-
-	/***/ },
-	/* 2 */
-	/***/ function(module, exports, __webpack_require__) {
-
-		// style-loader: Adds some css to the DOM by adding a <style> tag
-		var dispose = __webpack_require__(4)
-			// The css code:
-			(__webpack_require__(3))
-		if(false) {
-			module.hot.accept();
-			module.hot.dispose(dispose);
-		}
-
-	/***/ },
-	/* 3 */
-	/***/ function(module, exports, __webpack_require__) {
-
-		module.exports =
-			".asm-wrapper {\n  position: relative;\n  top: 0;\n  left: 0;\n  z-index: 10;\n}\n#asm-mask {\n  position: fixed;\n  top: 0;\n  left: 0;\n  z-index: 9998;\n  width: 100%;\n  height: 100%;\n  background: rgba(0,0,0,0.8);\n}\n.asm {\n  position: fixed;\n  z-index: 9999;\n  overflow: hidden;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-horizontal {\n  top: 0;\n  width: 300px;\n  height: 100%;\n}\n.asm-vertical {\n  left: 0;\n  width: 100%;\n  height: 100px;\n}\n.asm-body-closed {\n  left: 0;\n  top: 0;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-left {\n  left: -300px;\n}\n.asm-left-open {\n  left: 0;\n}\n.asm-body-push-left {\n  left: 300px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-right {\n  right: -300px;\n}\n.asm-right-open {\n  right: 0;\n}\n.asm-body-push-right {\n  left: -300px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-top {\n  top: -100px;\n}\n.asm-top-open {\n  top: 0;\n}\n.asm-body-push-top {\n  top: 100px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-bottom {\n  bottom: -100px;\n}\n.asm-bottom-open {\n  bottom: 0;\n}\n.asm-body-push-bottom {\n  top: -100px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n";
-
-	/***/ },
-	/* 4 */
-	/***/ function(module, exports, __webpack_require__) {
-
-		/*
-			MIT License http://www.opensource.org/licenses/mit-license.php
-			Author Tobias Koppers @sokra
-		*/
-		module.exports = function addStyle(cssCode) {
-			if(true) {
-				if(typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
-			}
-			var styleElement = document.createElement("style");
-			styleElement.type = "text/css";
-			if (styleElement.styleSheet) {
-				styleElement.styleSheet.cssText = cssCode;
-			} else {
-				styleElement.appendChild(document.createTextNode(cssCode));
-			}
-			var head = document.getElementsByTagName("head")[0];
-			head.appendChild(styleElement);
-			return function() {
-				head.removeChild(styleElement);
-			};
-		}
-
-	/***/ }
-	/******/ ])
-	/*
-	//@ sourceMappingURL=angular-slide-menu.js.map
-	*/
 
 /***/ },
 /* 19 */

@@ -6,7 +6,12 @@ exports.index = function *() {
   this.response.body = yield render('main', {host: global.host});
 };
 
-exports.location = function *(id) {
+exports.entry = function *(name) {
+  var entry = yield entries.findOne({unique_name: name});
+  this.response.body = yield render('entry', {host: global.host, entry: entry});
+};
+
+exports.entry_by_id = function *(id) {
   var entry = yield entries.findById(id);
   this.response.body = yield render('entry', {host: global.host, entry: entry});
 };

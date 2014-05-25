@@ -1,9 +1,9 @@
 <div id="entry" class="hidden">[[ info | json ]]</div>
-<h1 class="heading">[[ info.name ]]</h1>
+<h1 class="heading">[[ info.name.en_us ]]</h1>
 <div class="description" data-ng-bind-html="description"></div>
 <div class="entry-content">
   <div class="image-container" data-ng-hide="info.images.length === 0">
-    <ul rn-carousel rn-carousel-buffered rn-carousel-indicator rn-carousel-control class="image ng-cloak">
+    <ul data-rn-carousel data-rn-carousel-buffered data-rn-carousel-indicator data-rn-carousel-control class="image ng-cloak">
       <li data-ng-repeat="image in info.images" 
         data-ng-style="{'height': '375px', 
         'background-image': 'url(' + image.url + ')', 
