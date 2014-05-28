@@ -3,6 +3,7 @@ module.exports = {
   , entry: {
         scripts: [
             "./public/scripts/app"
+          , "./node_modules/angular-leaflet-directive/dist/angular-leaflet-directive.js"
         ]
       , stylesheets: [
             "./public/stylesheets/app.styl"
