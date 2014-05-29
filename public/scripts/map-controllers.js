@@ -11,8 +11,8 @@ var mapControllers = angular.module('mapControllers', [
   , 'mapServices'
 ]);
 
-mapControllers.controller('MapCtrl', ['$scope', 'Locations', 'leafletEvents',
-    function($scope, Locations, leafletEvents) {
+mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
+    function($scope, Entries, leafletEvents) {
       L.Icon.Default.imagePath = '/images';
 
       // Initialize popup template
@@ -33,63 +33,65 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations', 'leafletEvents',
           }
 
           // Center map on user's location
-        , center: {autoDiscover: true}
+        , center: {
+              autoDiscover: true
+            , zoom: 10
+          }
 
-          // Initialize list of locations
-        , locations: []
+          // Initialize list of locations/events
+        , entries: []
 
           // Initialize all icons
         , icons: {
               restaurantIcon: {
                 iconUrl: '/images/sjjb/restaurant.svg',
                 iconSize: [$scope.width,$scope.height],
-                popupAnchor: [0,-1*$scope.height/2]
+                popupAnchor: [$scope.width/2-15,-1*$scope.height]
               }
             , coffeeIcon: {
                 iconUrl: '/images/sjjb/coffee.svg',
                 iconSize: [$scope.width,$scope.height],
-                //popupAnchor: [0,-1*$scope.height/2]
-                popupAnchor: [0, 0]
+                popupAnchor: [$scope.width/2-15,-1*$scope.height]
               }
             , barIcon: {
                 iconUrl: '/images/sjjb/bar.svg',
                 iconSize: [$scope.width,$scope.height],
-                popupAnchor: [0,-1*$scope.height/2]
+                popupAnchor: [$scope.width/2-15,-1*$scope.height]
               }
             , vendorIcon: {
                 iconUrl: '/images/sjjb/vendor.svg',
                 iconSize: [$scope.width,$scope.height],
-                popupAnchor: [0,-1*$scope.height/2]
+                popupAnchor: [$scope.width/2-15,-1*$scope.height]
               }
             , groceryIcon: {
                 iconUrl: '/images/sjjb/grocery.svg',
                 iconSize: [$scope.width,$scope.height],
-                popupAnchor: [0,-1*$scope.height/2]
+                popupAnchor: [$scope.width/2-15,-1*$scope.height]
               }
             , catererIcon: {
                 iconUrl: '/images/sjjb/caterer.svg',
                 iconSize: [$scope.width,$scope.height],
-                popupAnchor: [0,-1*$scope.height/2]
+                popupAnchor: [$scope.width/2-15,-1*$scope.height]
               }
             , generalIcon: {
                 iconUrl: '/images/sjjb/general.svg',
                 iconSize: [$scope.width,$scope.height],
-                popupAnchor: [0,-$scope.height/2]
+                popupAnchor: [$scope.width/2-15,-1*$scope.height]
               }
             , organizationIcon: {
                 iconUrl: '/images/sjjb/organization.svg',
                 iconSize: [$scope.width,$scope.height],
-                popupAnchor: [0,0]
+                popupAnchor: [$scope.width/2-15,-1*$scope.height]
               }
             , hotelIcon: {
                 iconUrl: '/images/sjjb/hotel.svg',
                 iconSize: [$scope.width,$scope.height],
-                popupAnchor: [0,0]
+                popupAnchor: [$scope.width/2-15,-1*$scope.height]
               }
             , otherIcon: {
                 iconUrl: '/images/sjjb/other.svg',
                 iconSize: [$scope.width,$scope.height],
-                popupAnchor: [0,-1*$scope.height/2]
+                popupAnchor: [$scope.width/2-15,-1*$scope.height]
               }
           }
 
@@ -99,36 +101,36 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations', 'leafletEvents',
 
       function find_nearby_locations(lat, lng) {
         // Find locations/events around user's location
-        Locations.search({lat: lat, lng: lng}).$promise.then(function(locations) {
-          locations.forEach(function(loc, index, array) {
-            console.log(loc);
+        Entries.search({lat: lat, lng: lng}).$promise.then(function(entries) {
+          entries.forEach(function(ent, index, array) {
+            console.log(ent);
             // Avoid adding the same location twice
             var duplicate = false;
-            for (var i=0; i<$scope.locations.length; i++) {
-              if ($scope.locations[i]._id === loc._id) {
+            for (var i=0; i<$scope.entries.length; i++) {
+              if ($scope.entries[i]._id === ent._id) {
                 duplicate = true;
                 break;
               }
             }
             if (!duplicate) {
               // Set all entry URLs to begin with '/#' if browser does not support HTML5 History API
-              loc.hash = (window.history && window.history.pushState) ? '' : '/#';
+              ent.hash = (window.history && window.history.pushState) ? '' : '/#';
 
               // Set which size image to use for thumbnails and what size of text to use
-              loc.thumbnail = (window.devicePixelRatio > 1) ? 1 : 0;
-              loc.popup_class = (window.devicePixelRatio > 1) ? 'large' : '';
+              ent.thumbnail = (window.devicePixelRatio > 1) ? 1 : 0;
+              ent.popup_class = (window.devicePixelRatio > 1) ? 'large' : '';
 
               // Calculate distance from user's location
-              loc.unit = (loc.country === 'USA') ? 'miles' : 'km';
-              loc.distance = haversine(
+              ent.unit = (ent.country === 'USA') ? 'miles' : 'km';
+              ent.distance = haversine(
                   {latitude: $scope.user_location.lat, longitude: $scope.user_location.lng}
                 , {latitude: lat, longitude: lng}
-                , {unit: loc.unit}
+                , {unit: ent.unit}
               ).toFixed(2);
 
               //var coords = L.latLng(loc.location.coordinates[1], loc.location.coordinates[0]);
               var icon = null;
-              switch(loc.categories[0]) {
+              switch(ent.categories[0]) {
                 case 'Restaurant':
                   icon = $scope.icons.restaurantIcon;
                   break;
@@ -164,17 +166,17 @@ mapControllers.controller('MapCtrl', ['$scope', 'Locations', 'leafletEvents',
                   break;
               }
 
-              console.log(loc);
+              console.log(ent);
               // Push location to array
-              $scope.locations.push(loc);
+              $scope.entries.push(ent);
 
               // Add marker to map
-              $scope.markers[loc._id] = {
-                  lat: loc.location.coordinates[1]
-                , lng: loc.location.coordinates[0] 
+              $scope.markers[ent._id] = {
+                  lat: ent.location.coordinates[1]
+                , lng: ent.location.coordinates[0] 
                 , icon: icon
                 , draggable: false
-                , message: template(loc)
+                , message: template(ent)
               };
             }
           });

@@ -1,6 +1,6 @@
 var mapServices = angular.module('mapServices', ['ngResource']);
 
-mapServices.factory('Locations', ['$resource', 
+mapServices.factory('Entries', ['$resource', 
     function($resource) {
       var host = document.querySelector("#host").innerHTML;
       console.log(host);
