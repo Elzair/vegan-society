@@ -14,7 +14,7 @@ var mapControllers = angular.module('mapControllers', [
 mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
     function($scope, Entries, leafletEvents) {
       L.Icon.Default.imagePath = '/images';
-
+console.log(leafletEvents.getAvailableMapEvents());
       // Initialize popup template
       var template = _.template("<h2 class=\"heading <%= popup_class %>\"><%= name.en_us %></h2> <div class=\"body-content <%= popup_class %>\"><div class=\"body-text\"><p><%= short_description.en_us %></p><p id=\"distance\"><%= distance %> <%= unit %></p><a href=\"<%= hash %>/entry/<%= unique_name %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
 
@@ -22,6 +22,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
           // Use 64 pixels for a retina display and 32 pixels otherwise
           width: (window.devicePixelRatio > 1) ? 64 : 40
         , height: (window.devicePixelRatio > 1) ? 64 : 40
+        , zoom: 10
       });
       angular.extend($scope, {
           // Initialize map
@@ -35,7 +36,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
           // Center map on user's location
         , center: {
               autoDiscover: true
-            , zoom: 10
+            , zoom: $scope.zoom
           }
 
           // Initialize list of locations/events
@@ -105,7 +106,6 @@ mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
         // Find locations/events around user's location
         Entries.search({lat: lat, lng: lng}).$promise.then(function(entries) {
           entries.forEach(function(ent, index, array) {
-            console.log(ent);
             // Avoid adding the same location twice
             var duplicate = false;
             for (var i=0; i<$scope.entries.length; i++) {
@@ -193,7 +193,6 @@ mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
       });
       
       $scope.$on('leafletDirectiveMap.locationfound', function (e, args) {
-        console.log(args);
         angular.extend($scope, {
             user_location:  args.leafletEvent.latlng
           , paths: {
@@ -209,8 +208,23 @@ mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
                 }
             }
         });
+
         // Search for places near user's current location
         find_nearby_locations(args.leafletEvent.latlng.lat, args.leafletEvent.latlng.lng);
+      });
+
+      // Center clicked marker
+      $scope.$on('leafletDirectiveMarker.click', function(e, args) {
+        $scope.center = {
+            lat: args.leafletEvent.latlng.lat
+          , lng: args.leafletEvent.latlng.lng
+          , zoom: $scope.zoom
+        };
+      });
+
+      // Save zoom level
+      $scope.$on('leafletDirectiveMap.zoomend', function(e, args) {
+        $scope.zoom = args.leafletEvent.target._zoom;
       });
       
       $scope.$on('leafletDirectiveMap.locationerror', function (e, args) {
