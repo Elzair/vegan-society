@@ -28,7 +28,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
           tiles: {
               url: 'https://{s}.tiles.mapbox.com/v3/elzair.hod9j49e/{z}/{x}/{y}.png'
             , options: {
-                attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">MapBox</a>'
+                attribution: 'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">MapBox</a>'
               }
           }
 
@@ -97,6 +97,8 @@ mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
 
           // Initialize set of markers
         , markers: {}
+
+        , paths: {}
       });
 
       function find_nearby_locations(lat, lng) {
@@ -177,7 +179,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
                 , icon: icon
                 , draggable: false
                 , message: template(ent)
-                , bounceOnAdd: true
+                , bounceOnAdd: true // Fix non-bouncing marker
               };
             }
           });
@@ -191,23 +193,24 @@ mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
       });
       
       $scope.$on('leafletDirectiveMap.locationfound', function (e, args) {
+        console.log(args);
         angular.extend($scope, {
             user_location:  args.leafletEvent.latlng
           , paths: {
                 circle: {
                     type: 'circle'
                   , radius: args.leafletEvent.accuracy / 2
-                  , latlngs: $scope.user_location
+                  , latlngs: args.leafletEvent.latlng
                 }
               , circleMarker: {
                     type: 'circleMarker'
                   , radius: (window.devicePixelRation > 1) ? 16 : 18
-                  , latlngs: $scope.user_location
+                  , latlngs: args.leafletEvent.latlng
                 }
             }
         });
         // Search for places near user's current location
-        find_nearby_locations($scope.user_location.lat, $scope.user_location.lng);
+        find_nearby_locations(args.leafletEvent.latlng.lat, args.leafletEvent.latlng.lng);
       });
       
       $scope.$on('leafletDirectiveMap.locationerror', function (e, args) {
