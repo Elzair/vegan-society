@@ -15,6 +15,7 @@ npm-debug.log
 node_modules
 conf/db.*.json
 conf/cloudinary.json
+conf/*.pem
 tools/vegguide-crawler/output
 tools/vegguide-crawler/conf/auth.json
 .DS_Store

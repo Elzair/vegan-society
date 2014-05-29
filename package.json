@@ -47,7 +47,12 @@
     "angular-module-touch": "~1.2.16",
     "angular-module-resource": "~1.2.16",
     "angular-module-route": "~1.2.16",
-    "angular-module-core": "~1.2.16"
+    "angular-module-core": "~1.2.16",
+    "passport-local": "~1.0.0",
+    "koa-passport": "~0.4.0",
+    "passport-facebook": "~1.0.3",
+    "passport-google": "~0.3.0",
+    "koa-oauth-server": "0.0.4"
   },
   "devDependencies": {
     "gulp": "~3.5.6",

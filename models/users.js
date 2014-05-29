@@ -2,4 +2,4 @@ var db   = require('../lib/db')
   , wrap = require('co-monk')
   ;
 
-module.exports = wrap(db.get('entries'));
+module.exports = wrap(db.get('users'));
