@@ -214,10 +214,11 @@ console.log(leafletEvents.getAvailableMapEvents());
       });
 
       // Center clicked marker
-      $scope.$on('leafletDirectiveMarker.click', function(e, args) {
+      $scope.$on('leafletDirectiveMap.popupopen', function(e, args) {
+        console.log(args);
         $scope.center = {
-            lat: args.leafletEvent.latlng.lat
-          , lng: args.leafletEvent.latlng.lng
+            lat: args.leafletEvent.popup._latlng.lat
+          , lng: args.leafletEvent.popup._latlng.lng
           , zoom: $scope.zoom
         };
       });

@@ -53,10 +53,10 @@
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var angularCore      = __webpack_require__(19)
+	var angularCore      = __webpack_require__(20)
 	  , angularResource  = __webpack_require__(17)
-	  , angularRoute     = __webpack_require__(18)
-	  , angularTouch     = __webpack_require__(16)
+	  , angularRoute     = __webpack_require__(16)
+	  , angularTouch     = __webpack_require__(19)
 	  , directives       = __webpack_require__(10)
 	  , entryControllers = __webpack_require__(11)
 	  , filters          = __webpack_require__(12)
@@ -2951,7 +2951,7 @@
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var carousel       = __webpack_require__(21)
+	var carousel       = __webpack_require__(18)
 	  ;
 
 	var entryControllers = angular.module('entryControllers', ['angular-carousel', 'mapServices']);
@@ -3004,11 +3004,11 @@
 /* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var bounceMarker     = __webpack_require__(20)
-	  , haversine        = __webpack_require__(27)
+	var bounceMarker     = __webpack_require__(21)
+	  , haversine        = __webpack_require__(24)
 	  , leaflet          = __webpack_require__(22)
 	  //, leafletDirective = require('angular-leaflet-directive')
-	  , _                = __webpack_require__(24)
+	  , _                = __webpack_require__(27)
 	  ;
 
 	var mapControllers = angular.module('mapControllers', [
@@ -3220,10 +3220,11 @@
 	      });
 
 	      // Center clicked marker
-	      $scope.$on('leafletDirectiveMarker.click', function(e, args) {
+	      $scope.$on('leafletDirectiveMap.popupopen', function(e, args) {
+	        console.log(args);
 	        $scope.center = {
-	            lat: args.leafletEvent.latlng.lat
-	          , lng: args.leafletEvent.latlng.lng
+	            lat: args.leafletEvent.popup._latlng.lat
+	          , lng: args.leafletEvent.popup._latlng.lng
 	          , zoom: $scope.zoom
 	        };
 	      });
@@ -3249,8 +3250,7 @@
 	mapServices.factory('Entries', ['$resource', 
 	    function($resource) {
 	      var host = document.querySelector("#host").innerHTML;
-	      console.log(host);
-	      return $resource('http://' + host + '/api/v1/search?lat=:lat&lng=:lng', {}, {
+	      return $resource('https://' + host + '/api/v1/search?lat=:lat&lng=:lng', {}, {
 	        search: {method: 'GET', responseType: 'json', isArray: true}
 	      });
 	    }
@@ -3259,8 +3259,7 @@
 	mapServices.factory('EntryInfo', ['$resource',
 	    function($resource) {
 	      var host = document.querySelector("#host").innerHTML;
-	      console.log(host);
-	      return $resource('http://' + host + '/api/v1/entry/:name', {}, {
+	      return $resource('https://' + host + '/api/v1/entry/:name', {}, {
 	        get: {method: 'GET', responseType: 'json'}
 	      });
 	    }
@@ -3269,8 +3268,7 @@
 	mapServices.factory('EntryInfoById', ['$resource',
 	    function($resource) {
 	      var host = document.querySelector("#host").innerHTML;
-	      console.log(host);
-	      return $resource('http://' + host + '/api/v1/entry/by-id/:id', {}, {
+	      return $resource('https://' + host + '/api/v1/entry/by-id/:id', {}, {
 	        get: {method: 'GET', responseType: 'json'}
 	      });
 	    }
@@ -3279,1203 +3277,6 @@
 
 /***/ },
 /* 16 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * @license AngularJS v1.2.16
-	 * (c) 2010-2014 Google, Inc. http://angularjs.org
-	 * License: MIT
-	 */
-	(function(window, angular, undefined) {'use strict';
-
-	/**
-	 * @ngdoc module
-	 * @name ngTouch
-	 * @description
-	 *
-	 * # ngTouch
-	 *
-	 * The `ngTouch` module provides touch events and other helpers for touch-enabled devices.
-	 * The implementation is based on jQuery Mobile touch event handling
-	 * ([jquerymobile.com](http://jquerymobile.com/)).
-	 *
-	 *
-	 * See {@link ngTouch.$swipe `$swipe`} for usage.
-	 *
-	 * <div doc-module-components="ngTouch"></div>
-	 *
-	 */
-
-	// define ngTouch module
-	/* global -ngTouch */
-	var ngTouch = angular.module('ngTouch', []);
-
-	/* global ngTouch: false */
-
-	    /**
-	     * @ngdoc service
-	     * @name $swipe
-	     *
-	     * @description
-	     * The `$swipe` service is a service that abstracts the messier details of hold-and-drag swipe
-	     * behavior, to make implementing swipe-related directives more convenient.
-	     *
-	     * Requires the {@link ngTouch `ngTouch`} module to be installed.
-	     *
-	     * `$swipe` is used by the `ngSwipeLeft` and `ngSwipeRight` directives in `ngTouch`, and by
-	     * `ngCarousel` in a separate component.
-	     *
-	     * # Usage
-	     * The `$swipe` service is an object with a single method: `bind`. `bind` takes an element
-	     * which is to be watched for swipes, and an object with four handler functions. See the
-	     * documentation for `bind` below.
-	     */
-
-	ngTouch.factory('$swipe', [function() {
-	  // The total distance in any direction before we make the call on swipe vs. scroll.
-	  var MOVE_BUFFER_RADIUS = 10;
-
-	  function getCoordinates(event) {
-	    var touches = event.touches && event.touches.length ? event.touches : [event];
-	    var e = (event.changedTouches && event.changedTouches[0]) ||
-	        (event.originalEvent && event.originalEvent.changedTouches &&
-	            event.originalEvent.changedTouches[0]) ||
-	        touches[0].originalEvent || touches[0];
-
-	    return {
-	      x: e.clientX,
-	      y: e.clientY
-	    };
-	  }
-
-	  return {
-	    /**
-	     * @ngdoc method
-	     * @name $swipe#bind
-	     *
-	     * @description
-	     * The main method of `$swipe`. It takes an element to be watched for swipe motions, and an
-	     * object containing event handlers.
-	     *
-	     * The four events are `start`, `move`, `end`, and `cancel`. `start`, `move`, and `end`
-	     * receive as a parameter a coordinates object of the form `{ x: 150, y: 310 }`.
-	     *
-	     * `start` is called on either `mousedown` or `touchstart`. After this event, `$swipe` is
-	     * watching for `touchmove` or `mousemove` events. These events are ignored until the total
-	     * distance moved in either dimension exceeds a small threshold.
-	     *
-	     * Once this threshold is exceeded, either the horizontal or vertical delta is greater.
-	     * - If the horizontal distance is greater, this is a swipe and `move` and `end` events follow.
-	     * - If the vertical distance is greater, this is a scroll, and we let the browser take over.
-	     *   A `cancel` event is sent.
-	     *
-	     * `move` is called on `mousemove` and `touchmove` after the above logic has determined that
-	     * a swipe is in progress.
-	     *
-	     * `end` is called when a swipe is successfully completed with a `touchend` or `mouseup`.
-	     *
-	     * `cancel` is called either on a `touchcancel` from the browser, or when we begin scrolling
-	     * as described above.
-	     *
-	     */
-	    bind: function(element, eventHandlers) {
-	      // Absolute total movement, used to control swipe vs. scroll.
-	      var totalX, totalY;
-	      // Coordinates of the start position.
-	      var startCoords;
-	      // Last event's position.
-	      var lastPos;
-	      // Whether a swipe is active.
-	      var active = false;
-
-	      element.on('touchstart mousedown', function(event) {
-	        startCoords = getCoordinates(event);
-	        active = true;
-	        totalX = 0;
-	        totalY = 0;
-	        lastPos = startCoords;
-	        eventHandlers['start'] && eventHandlers['start'](startCoords, event);
-	      });
-
-	      element.on('touchcancel', function(event) {
-	        active = false;
-	        eventHandlers['cancel'] && eventHandlers['cancel'](event);
-	      });
-
-	      element.on('touchmove mousemove', function(event) {
-	        if (!active) return;
-
-	        // Android will send a touchcancel if it thinks we're starting to scroll.
-	        // So when the total distance (+ or - or both) exceeds 10px in either direction,
-	        // we either:
-	        // - On totalX > totalY, we send preventDefault() and treat this as a swipe.
-	        // - On totalY > totalX, we let the browser handle it as a scroll.
-
-	        if (!startCoords) return;
-	        var coords = getCoordinates(event);
-
-	        totalX += Math.abs(coords.x - lastPos.x);
-	        totalY += Math.abs(coords.y - lastPos.y);
-
-	        lastPos = coords;
-
-	        if (totalX < MOVE_BUFFER_RADIUS && totalY < MOVE_BUFFER_RADIUS) {
-	          return;
-	        }
-
-	        // One of totalX or totalY has exceeded the buffer, so decide on swipe vs. scroll.
-	        if (totalY > totalX) {
-	          // Allow native scrolling to take over.
-	          active = false;
-	          eventHandlers['cancel'] && eventHandlers['cancel'](event);
-	          return;
-	        } else {
-	          // Prevent the browser from scrolling.
-	          event.preventDefault();
-	          eventHandlers['move'] && eventHandlers['move'](coords, event);
-	        }
-	      });
-
-	      element.on('touchend mouseup', function(event) {
-	        if (!active) return;
-	        active = false;
-	        eventHandlers['end'] && eventHandlers['end'](getCoordinates(event), event);
-	      });
-	    }
-	  };
-	}]);
-
-	/* global ngTouch: false */
-
-	/**
-	 * @ngdoc directive
-	 * @name ngClick
-	 *
-	 * @description
-	 * A more powerful replacement for the default ngClick designed to be used on touchscreen
-	 * devices. Most mobile browsers wait about 300ms after a tap-and-release before sending
-	 * the click event. This version handles them immediately, and then prevents the
-	 * following click event from propagating.
-	 *
-	 * Requires the {@link ngTouch `ngTouch`} module to be installed.
-	 *
-	 * This directive can fall back to using an ordinary click event, and so works on desktop
-	 * browsers as well as mobile.
-	 *
-	 * This directive also sets the CSS class `ng-click-active` while the element is being held
-	 * down (by a mouse click or touch) so you can restyle the depressed element if you wish.
-	 *
-	 * @element ANY
-	 * @param {expression} ngClick {@link guide/expression Expression} to evaluate
-	 * upon tap. (Event object is available as `$event`)
-	 *
-	 * @example
-	    <example>
-	      <file name="index.html">
-	        <button ng-click="count = count + 1" ng-init="count=0">
-	          Increment
-	        </button>
-	        count: {{ count }}
-	      </file>
-	    </example>
-	 */
-
-	ngTouch.config(['$provide', function($provide) {
-	  $provide.decorator('ngClickDirective', ['$delegate', function($delegate) {
-	    // drop the default ngClick directive
-	    $delegate.shift();
-	    return $delegate;
-	  }]);
-	}]);
-
-	ngTouch.directive('ngClick', ['$parse', '$timeout', '$rootElement',
-	    function($parse, $timeout, $rootElement) {
-	  var TAP_DURATION = 750; // Shorter than 750ms is a tap, longer is a taphold or drag.
-	  var MOVE_TOLERANCE = 12; // 12px seems to work in most mobile browsers.
-	  var PREVENT_DURATION = 2500; // 2.5 seconds maximum from preventGhostClick call to click
-	  var CLICKBUSTER_THRESHOLD = 25; // 25 pixels in any dimension is the limit for busting clicks.
-
-	  var ACTIVE_CLASS_NAME = 'ng-click-active';
-	  var lastPreventedTime;
-	  var touchCoordinates;
-	  var lastLabelClickCoordinates;
-
-
-	  // TAP EVENTS AND GHOST CLICKS
-	  //
-	  // Why tap events?
-	  // Mobile browsers detect a tap, then wait a moment (usually ~300ms) to see if you're
-	  // double-tapping, and then fire a click event.
-	  //
-	  // This delay sucks and makes mobile apps feel unresponsive.
-	  // So we detect touchstart, touchmove, touchcancel and touchend ourselves and determine when
-	  // the user has tapped on something.
-	  //
-	  // What happens when the browser then generates a click event?
-	  // The browser, of course, also detects the tap and fires a click after a delay. This results in
-	  // tapping/clicking twice. So we do "clickbusting" to prevent it.
-	  //
-	  // How does it work?
-	  // We attach global touchstart and click handlers, that run during the capture (early) phase.
-	  // So the sequence for a tap is:
-	  // - global touchstart: Sets an "allowable region" at the point touched.
-	  // - element's touchstart: Starts a touch
-	  // (- touchmove or touchcancel ends the touch, no click follows)
-	  // - element's touchend: Determines if the tap is valid (didn't move too far away, didn't hold
-	  //   too long) and fires the user's tap handler. The touchend also calls preventGhostClick().
-	  // - preventGhostClick() removes the allowable region the global touchstart created.
-	  // - The browser generates a click event.
-	  // - The global click handler catches the click, and checks whether it was in an allowable region.
-	  //     - If preventGhostClick was called, the region will have been removed, the click is busted.
-	  //     - If the region is still there, the click proceeds normally. Therefore clicks on links and
-	  //       other elements without ngTap on them work normally.
-	  //
-	  // This is an ugly, terrible hack!
-	  // Yeah, tell me about it. The alternatives are using the slow click events, or making our users
-	  // deal with the ghost clicks, so I consider this the least of evils. Fortunately Angular
-	  // encapsulates this ugly logic away from the user.
-	  //
-	  // Why not just put click handlers on the element?
-	  // We do that too, just to be sure. The problem is that the tap event might have caused the DOM
-	  // to change, so that the click fires in the same position but something else is there now. So
-	  // the handlers are global and care only about coordinates and not elements.
-
-	  // Checks if the coordinates are close enough to be within the region.
-	  function hit(x1, y1, x2, y2) {
-	    return Math.abs(x1 - x2) < CLICKBUSTER_THRESHOLD && Math.abs(y1 - y2) < CLICKBUSTER_THRESHOLD;
-	  }
-
-	  // Checks a list of allowable regions against a click location.
-	  // Returns true if the click should be allowed.
-	  // Splices out the allowable region from the list after it has been used.
-	  function checkAllowableRegions(touchCoordinates, x, y) {
-	    for (var i = 0; i < touchCoordinates.length; i += 2) {
-	      if (hit(touchCoordinates[i], touchCoordinates[i+1], x, y)) {
-	        touchCoordinates.splice(i, i + 2);
-	        return true; // allowable region
-	      }
-	    }
-	    return false; // No allowable region; bust it.
-	  }
-
-	  // Global click handler that prevents the click if it's in a bustable zone and preventGhostClick
-	  // was called recently.
-	  function onClick(event) {
-	    if (Date.now() - lastPreventedTime > PREVENT_DURATION) {
-	      return; // Too old.
-	    }
-
-	    var touches = event.touches && event.touches.length ? event.touches : [event];
-	    var x = touches[0].clientX;
-	    var y = touches[0].clientY;
-	    // Work around desktop Webkit quirk where clicking a label will fire two clicks (on the label
-	    // and on the input element). Depending on the exact browser, this second click we don't want
-	    // to bust has either (0,0), negative coordinates, or coordinates equal to triggering label
-	    // click event
-	    if (x < 1 && y < 1) {
-	      return; // offscreen
-	    }
-	    if (lastLabelClickCoordinates &&
-	        lastLabelClickCoordinates[0] === x && lastLabelClickCoordinates[1] === y) {
-	      return; // input click triggered by label click
-	    }
-	    // reset label click coordinates on first subsequent click
-	    if (lastLabelClickCoordinates) {
-	      lastLabelClickCoordinates = null;
-	    }
-	    // remember label click coordinates to prevent click busting of trigger click event on input
-	    if (event.target.tagName.toLowerCase() === 'label') {
-	      lastLabelClickCoordinates = [x, y];
-	    }
-
-	    // Look for an allowable region containing this click.
-	    // If we find one, that means it was created by touchstart and not removed by
-	    // preventGhostClick, so we don't bust it.
-	    if (checkAllowableRegions(touchCoordinates, x, y)) {
-	      return;
-	    }
-
-	    // If we didn't find an allowable region, bust the click.
-	    event.stopPropagation();
-	    event.preventDefault();
-
-	    // Blur focused form elements
-	    event.target && event.target.blur();
-	  }
-
-
-	  // Global touchstart handler that creates an allowable region for a click event.
-	  // This allowable region can be removed by preventGhostClick if we want to bust it.
-	  function onTouchStart(event) {
-	    var touches = event.touches && event.touches.length ? event.touches : [event];
-	    var x = touches[0].clientX;
-	    var y = touches[0].clientY;
-	    touchCoordinates.push(x, y);
-
-	    $timeout(function() {
-	      // Remove the allowable region.
-	      for (var i = 0; i < touchCoordinates.length; i += 2) {
-	        if (touchCoordinates[i] == x && touchCoordinates[i+1] == y) {
-	          touchCoordinates.splice(i, i + 2);
-	          return;
-	        }
-	      }
-	    }, PREVENT_DURATION, false);
-	  }
-
-	  // On the first call, attaches some event handlers. Then whenever it gets called, it creates a
-	  // zone around the touchstart where clicks will get busted.
-	  function preventGhostClick(x, y) {
-	    if (!touchCoordinates) {
-	      $rootElement[0].addEventListener('click', onClick, true);
-	      $rootElement[0].addEventListener('touchstart', onTouchStart, true);
-	      touchCoordinates = [];
-	    }
-
-	    lastPreventedTime = Date.now();
-
-	    checkAllowableRegions(touchCoordinates, x, y);
-	  }
-
-	  // Actual linking function.
-	  return function(scope, element, attr) {
-	    var clickHandler = $parse(attr.ngClick),
-	        tapping = false,
-	        tapElement,  // Used to blur the element after a tap.
-	        startTime,   // Used to check if the tap was held too long.
-	        touchStartX,
-	        touchStartY;
-
-	    function resetState() {
-	      tapping = false;
-	      element.removeClass(ACTIVE_CLASS_NAME);
-	    }
-
-	    element.on('touchstart', function(event) {
-	      tapping = true;
-	      tapElement = event.target ? event.target : event.srcElement; // IE uses srcElement.
-	      // Hack for Safari, which can target text nodes instead of containers.
-	      if(tapElement.nodeType == 3) {
-	        tapElement = tapElement.parentNode;
-	      }
-
-	      element.addClass(ACTIVE_CLASS_NAME);
-
-	      startTime = Date.now();
-
-	      var touches = event.touches && event.touches.length ? event.touches : [event];
-	      var e = touches[0].originalEvent || touches[0];
-	      touchStartX = e.clientX;
-	      touchStartY = e.clientY;
-	    });
-
-	    element.on('touchmove', function(event) {
-	      resetState();
-	    });
-
-	    element.on('touchcancel', function(event) {
-	      resetState();
-	    });
-
-	    element.on('touchend', function(event) {
-	      var diff = Date.now() - startTime;
-
-	      var touches = (event.changedTouches && event.changedTouches.length) ? event.changedTouches :
-	          ((event.touches && event.touches.length) ? event.touches : [event]);
-	      var e = touches[0].originalEvent || touches[0];
-	      var x = e.clientX;
-	      var y = e.clientY;
-	      var dist = Math.sqrt( Math.pow(x - touchStartX, 2) + Math.pow(y - touchStartY, 2) );
-
-	      if (tapping && diff < TAP_DURATION && dist < MOVE_TOLERANCE) {
-	        // Call preventGhostClick so the clickbuster will catch the corresponding click.
-	        preventGhostClick(x, y);
-
-	        // Blur the focused element (the button, probably) before firing the callback.
-	        // This doesn't work perfectly on Android Chrome, but seems to work elsewhere.
-	        // I couldn't get anything to work reliably on Android Chrome.
-	        if (tapElement) {
-	          tapElement.blur();
-	        }
-
-	        if (!angular.isDefined(attr.disabled) || attr.disabled === false) {
-	          element.triggerHandler('click', [event]);
-	        }
-	      }
-
-	      resetState();
-	    });
-
-	    // Hack for iOS Safari's benefit. It goes searching for onclick handlers and is liable to click
-	    // something else nearby.
-	    element.onclick = function(event) { };
-
-	    // Actual click handler.
-	    // There are three different kinds of clicks, only two of which reach this point.
-	    // - On desktop browsers without touch events, their clicks will always come here.
-	    // - On mobile browsers, the simulated "fast" click will call this.
-	    // - But the browser's follow-up slow click will be "busted" before it reaches this handler.
-	    // Therefore it's safe to use this directive on both mobile and desktop.
-	    element.on('click', function(event, touchend) {
-	      scope.$apply(function() {
-	        clickHandler(scope, {$event: (touchend || event)});
-	      });
-	    });
-
-	    element.on('mousedown', function(event) {
-	      element.addClass(ACTIVE_CLASS_NAME);
-	    });
-
-	    element.on('mousemove mouseup', function(event) {
-	      element.removeClass(ACTIVE_CLASS_NAME);
-	    });
-
-	  };
-	}]);
-
-	/* global ngTouch: false */
-
-	/**
-	 * @ngdoc directive
-	 * @name ngSwipeLeft
-	 *
-	 * @description
-	 * Specify custom behavior when an element is swiped to the left on a touchscreen device.
-	 * A leftward swipe is a quick, right-to-left slide of the finger.
-	 * Though ngSwipeLeft is designed for touch-based devices, it will work with a mouse click and drag
-	 * too.
-	 *
-	 * Requires the {@link ngTouch `ngTouch`} module to be installed.
-	 *
-	 * @element ANY
-	 * @param {expression} ngSwipeLeft {@link guide/expression Expression} to evaluate
-	 * upon left swipe. (Event object is available as `$event`)
-	 *
-	 * @example
-	    <example>
-	      <file name="index.html">
-	        <div ng-show="!showActions" ng-swipe-left="showActions = true">
-	          Some list content, like an email in the inbox
-	        </div>
-	        <div ng-show="showActions" ng-swipe-right="showActions = false">
-	          <button ng-click="reply()">Reply</button>
-	          <button ng-click="delete()">Delete</button>
-	        </div>
-	      </file>
-	    </example>
-	 */
-
-	/**
-	 * @ngdoc directive
-	 * @name ngSwipeRight
-	 *
-	 * @description
-	 * Specify custom behavior when an element is swiped to the right on a touchscreen device.
-	 * A rightward swipe is a quick, left-to-right slide of the finger.
-	 * Though ngSwipeRight is designed for touch-based devices, it will work with a mouse click and drag
-	 * too.
-	 *
-	 * Requires the {@link ngTouch `ngTouch`} module to be installed.
-	 *
-	 * @element ANY
-	 * @param {expression} ngSwipeRight {@link guide/expression Expression} to evaluate
-	 * upon right swipe. (Event object is available as `$event`)
-	 *
-	 * @example
-	    <example>
-	      <file name="index.html">
-	        <div ng-show="!showActions" ng-swipe-left="showActions = true">
-	          Some list content, like an email in the inbox
-	        </div>
-	        <div ng-show="showActions" ng-swipe-right="showActions = false">
-	          <button ng-click="reply()">Reply</button>
-	          <button ng-click="delete()">Delete</button>
-	        </div>
-	      </file>
-	    </example>
-	 */
-
-	function makeSwipeDirective(directiveName, direction, eventName) {
-	  ngTouch.directive(directiveName, ['$parse', '$swipe', function($parse, $swipe) {
-	    // The maximum vertical delta for a swipe should be less than 75px.
-	    var MAX_VERTICAL_DISTANCE = 75;
-	    // Vertical distance should not be more than a fraction of the horizontal distance.
-	    var MAX_VERTICAL_RATIO = 0.3;
-	    // At least a 30px lateral motion is necessary for a swipe.
-	    var MIN_HORIZONTAL_DISTANCE = 30;
-
-	    return function(scope, element, attr) {
-	      var swipeHandler = $parse(attr[directiveName]);
-
-	      var startCoords, valid;
-
-	      function validSwipe(coords) {
-	        // Check that it's within the coordinates.
-	        // Absolute vertical distance must be within tolerances.
-	        // Horizontal distance, we take the current X - the starting X.
-	        // This is negative for leftward swipes and positive for rightward swipes.
-	        // After multiplying by the direction (-1 for left, +1 for right), legal swipes
-	        // (ie. same direction as the directive wants) will have a positive delta and
-	        // illegal ones a negative delta.
-	        // Therefore this delta must be positive, and larger than the minimum.
-	        if (!startCoords) return false;
-	        var deltaY = Math.abs(coords.y - startCoords.y);
-	        var deltaX = (coords.x - startCoords.x) * direction;
-	        return valid && // Short circuit for already-invalidated swipes.
-	            deltaY < MAX_VERTICAL_DISTANCE &&
-	            deltaX > 0 &&
-	            deltaX > MIN_HORIZONTAL_DISTANCE &&
-	            deltaY / deltaX < MAX_VERTICAL_RATIO;
-	      }
-
-	      $swipe.bind(element, {
-	        'start': function(coords, event) {
-	          startCoords = coords;
-	          valid = true;
-	        },
-	        'cancel': function(event) {
-	          valid = false;
-	        },
-	        'end': function(coords, event) {
-	          if (validSwipe(coords)) {
-	            scope.$apply(function() {
-	              element.triggerHandler(eventName);
-	              swipeHandler(scope, {$event: event});
-	            });
-	          }
-	        }
-	      });
-	    };
-	  }]);
-	}
-
-	// Left is negative X-coordinate, right is positive.
-	makeSwipeDirective('ngSwipeLeft', -1, 'swipeleft');
-	makeSwipeDirective('ngSwipeRight', 1, 'swiperight');
-
-
-
-	})(window, window.angular);
-
-
-/***/ },
-/* 17 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * @license AngularJS v1.2.16
-	 * (c) 2010-2014 Google, Inc. http://angularjs.org
-	 * License: MIT
-	 */
-	(function(window, angular, undefined) {'use strict';
-
-	var $resourceMinErr = angular.$$minErr('$resource');
-
-	// Helper functions and regex to lookup a dotted path on an object
-	// stopping at undefined/null.  The path must be composed of ASCII
-	// identifiers (just like $parse)
-	var MEMBER_NAME_REGEX = /^(\.[a-zA-Z_$][0-9a-zA-Z_$]*)+$/;
-
-	function isValidDottedPath(path) {
-	  return (path != null && path !== '' && path !== 'hasOwnProperty' &&
-	      MEMBER_NAME_REGEX.test('.' + path));
-	}
-
-	function lookupDottedPath(obj, path) {
-	  if (!isValidDottedPath(path)) {
-	    throw $resourceMinErr('badmember', 'Dotted member path "@{0}" is invalid.', path);
-	  }
-	  var keys = path.split('.');
-	  for (var i = 0, ii = keys.length; i < ii && obj !== undefined; i++) {
-	    var key = keys[i];
-	    obj = (obj !== null) ? obj[key] : undefined;
-	  }
-	  return obj;
-	}
-
-	/**
-	 * Create a shallow copy of an object and clear other fields from the destination
-	 */
-	function shallowClearAndCopy(src, dst) {
-	  dst = dst || {};
-
-	  angular.forEach(dst, function(value, key){
-	    delete dst[key];
-	  });
-
-	  for (var key in src) {
-	    if (src.hasOwnProperty(key) && !(key.charAt(0) === '$' && key.charAt(1) === '$')) {
-	      dst[key] = src[key];
-	    }
-	  }
-
-	  return dst;
-	}
-
-	/**
-	 * @ngdoc module
-	 * @name ngResource
-	 * @description
-	 *
-	 * # ngResource
-	 *
-	 * The `ngResource` module provides interaction support with RESTful services
-	 * via the $resource service.
-	 *
-	 *
-	 * <div doc-module-components="ngResource"></div>
-	 *
-	 * See {@link ngResource.$resource `$resource`} for usage.
-	 */
-
-	/**
-	 * @ngdoc service
-	 * @name $resource
-	 * @requires $http
-	 *
-	 * @description
-	 * A factory which creates a resource object that lets you interact with
-	 * [RESTful](http://en.wikipedia.org/wiki/Representational_State_Transfer) server-side data sources.
-	 *
-	 * The returned resource object has action methods which provide high-level behaviors without
-	 * the need to interact with the low level {@link ng.$http $http} service.
-	 *
-	 * Requires the {@link ngResource `ngResource`} module to be installed.
-	 *
-	 * @param {string} url A parametrized URL template with parameters prefixed by `:` as in
-	 *   `/user/:username`. If you are using a URL with a port number (e.g.
-	 *   `http://example.com:8080/api`), it will be respected.
-	 *
-	 *   If you are using a url with a suffix, just add the suffix, like this:
-	 *   `$resource('http://example.com/resource.json')` or `$resource('http://example.com/:id.json')`
-	 *   or even `$resource('http://example.com/resource/:resource_id.:format')`
-	 *   If the parameter before the suffix is empty, :resource_id in this case, then the `/.` will be
-	 *   collapsed down to a single `.`.  If you need this sequence to appear and not collapse then you
-	 *   can escape it with `/\.`.
-	 *
-	 * @param {Object=} paramDefaults Default values for `url` parameters. These can be overridden in
-	 *   `actions` methods. If any of the parameter value is a function, it will be executed every time
-	 *   when a param value needs to be obtained for a request (unless the param was overridden).
-	 *
-	 *   Each key value in the parameter object is first bound to url template if present and then any
-	 *   excess keys are appended to the url search query after the `?`.
-	 *
-	 *   Given a template `/path/:verb` and parameter `{verb:'greet', salutation:'Hello'}` results in
-	 *   URL `/path/greet?salutation=Hello`.
-	 *
-	 *   If the parameter value is prefixed with `@` then the value of that parameter is extracted from
-	 *   the data object (useful for non-GET operations).
-	 *
-	 * @param {Object.<Object>=} actions Hash with declaration of custom action that should extend
-	 *   the default set of resource actions. The declaration should be created in the format of {@link
-	 *   ng.$http#usage_parameters $http.config}:
-	 *
-	 *       {action1: {method:?, params:?, isArray:?, headers:?, ...},
-	 *        action2: {method:?, params:?, isArray:?, headers:?, ...},
-	 *        ...}
-	 *
-	 *   Where:
-	 *
-	 *   - **`action`** – {string} – The name of action. This name becomes the name of the method on
-	 *     your resource object.
-	 *   - **`method`** – {string} – HTTP request method. Valid methods are: `GET`, `POST`, `PUT`,
-	 *     `DELETE`, and `JSONP`.
-	 *   - **`params`** – {Object=} – Optional set of pre-bound parameters for this action. If any of
-	 *     the parameter value is a function, it will be executed every time when a param value needs to
-	 *     be obtained for a request (unless the param was overridden).
-	 *   - **`url`** – {string} – action specific `url` override. The url templating is supported just
-	 *     like for the resource-level urls.
-	 *   - **`isArray`** – {boolean=} – If true then the returned object for this action is an array,
-	 *     see `returns` section.
-	 *   - **`transformRequest`** –
-	 *     `{function(data, headersGetter)|Array.<function(data, headersGetter)>}` –
-	 *     transform function or an array of such functions. The transform function takes the http
-	 *     request body and headers and returns its transformed (typically serialized) version.
-	 *   - **`transformResponse`** –
-	 *     `{function(data, headersGetter)|Array.<function(data, headersGetter)>}` –
-	 *     transform function or an array of such functions. The transform function takes the http
-	 *     response body and headers and returns its transformed (typically deserialized) version.
-	 *   - **`cache`** – `{boolean|Cache}` – If true, a default $http cache will be used to cache the
-	 *     GET request, otherwise if a cache instance built with
-	 *     {@link ng.$cacheFactory $cacheFactory}, this cache will be used for
-	 *     caching.
-	 *   - **`timeout`** – `{number|Promise}` – timeout in milliseconds, or {@link ng.$q promise} that
-	 *     should abort the request when resolved.
-	 *   - **`withCredentials`** - `{boolean}` - whether to set the `withCredentials` flag on the
-	 *     XHR object. See
-	 *     [requests with credentials](https://developer.mozilla.org/en/http_access_control#section_5)
-	 *     for more information.
-	 *   - **`responseType`** - `{string}` - see
-	 *     [requestType](https://developer.mozilla.org/en-US/docs/DOM/XMLHttpRequest#responseType).
-	 *   - **`interceptor`** - `{Object=}` - The interceptor object has two optional methods -
-	 *     `response` and `responseError`. Both `response` and `responseError` interceptors get called
-	 *     with `http response` object. See {@link ng.$http $http interceptors}.
-	 *
-	 * @returns {Object} A resource "class" object with methods for the default set of resource actions
-	 *   optionally extended with custom `actions`. The default set contains these actions:
-	 *   ```js
-	 *   { 'get':    {method:'GET'},
-	 *     'save':   {method:'POST'},
-	 *     'query':  {method:'GET', isArray:true},
-	 *     'remove': {method:'DELETE'},
-	 *     'delete': {method:'DELETE'} };
-	 *   ```
-	 *
-	 *   Calling these methods invoke an {@link ng.$http} with the specified http method,
-	 *   destination and parameters. When the data is returned from the server then the object is an
-	 *   instance of the resource class. The actions `save`, `remove` and `delete` are available on it
-	 *   as  methods with the `$` prefix. This allows you to easily perform CRUD operations (create,
-	 *   read, update, delete) on server-side data like this:
-	 *   ```js
-	 *   var User = $resource('/user/:userId', {userId:'@id'});
-	 *   var user = User.get({userId:123}, function() {
-	 *     user.abc = true;
-	 *     user.$save();
-	 *   });
-	 *   ```
-	 *
-	 *   It is important to realize that invoking a $resource object method immediately returns an
-	 *   empty reference (object or array depending on `isArray`). Once the data is returned from the
-	 *   server the existing reference is populated with the actual data. This is a useful trick since
-	 *   usually the resource is assigned to a model which is then rendered by the view. Having an empty
-	 *   object results in no rendering, once the data arrives from the server then the object is
-	 *   populated with the data and the view automatically re-renders itself showing the new data. This
-	 *   means that in most cases one never has to write a callback function for the action methods.
-	 *
-	 *   The action methods on the class object or instance object can be invoked with the following
-	 *   parameters:
-	 *
-	 *   - HTTP GET "class" actions: `Resource.action([parameters], [success], [error])`
-	 *   - non-GET "class" actions: `Resource.action([parameters], postData, [success], [error])`
-	 *   - non-GET instance actions:  `instance.$action([parameters], [success], [error])`
-	 *
-	 *   Success callback is called with (value, responseHeaders) arguments. Error callback is called
-	 *   with (httpResponse) argument.
-	 *
-	 *   Class actions return empty instance (with additional properties below).
-	 *   Instance actions return promise of the action.
-	 *
-	 *   The Resource instances and collection have these additional properties:
-	 *
-	 *   - `$promise`: the {@link ng.$q promise} of the original server interaction that created this
-	 *     instance or collection.
-	 *
-	 *     On success, the promise is resolved with the same resource instance or collection object,
-	 *     updated with data from server. This makes it easy to use in
-	 *     {@link ngRoute.$routeProvider resolve section of $routeProvider.when()} to defer view
-	 *     rendering until the resource(s) are loaded.
-	 *
-	 *     On failure, the promise is resolved with the {@link ng.$http http response} object, without
-	 *     the `resource` property.
-	 *
-	 *     If an interceptor object was provided, the promise will instead be resolved with the value
-	 *     returned by the interceptor.
-	 *
-	 *   - `$resolved`: `true` after first server interaction is completed (either with success or
-	 *      rejection), `false` before that. Knowing if the Resource has been resolved is useful in
-	 *      data-binding.
-	 *
-	 * @example
-	 *
-	 * # Credit card resource
-	 *
-	 * ```js
-	     // Define CreditCard class
-	     var CreditCard = $resource('/user/:userId/card/:cardId',
-	      {userId:123, cardId:'@id'}, {
-	       charge: {method:'POST', params:{charge:true}}
-	      });
-
-	     // We can retrieve a collection from the server
-	     var cards = CreditCard.query(function() {
-	       // GET: /user/123/card
-	       // server returns: [ {id:456, number:'1234', name:'Smith'} ];
-
-	       var card = cards[0];
-	       // each item is an instance of CreditCard
-	       expect(card instanceof CreditCard).toEqual(true);
-	       card.name = "J. Smith";
-	       // non GET methods are mapped onto the instances
-	       card.$save();
-	       // POST: /user/123/card/456 {id:456, number:'1234', name:'J. Smith'}
-	       // server returns: {id:456, number:'1234', name: 'J. Smith'};
-
-	       // our custom method is mapped as well.
-	       card.$charge({amount:9.99});
-	       // POST: /user/123/card/456?amount=9.99&charge=true {id:456, number:'1234', name:'J. Smith'}
-	     });
-
-	     // we can create an instance as well
-	     var newCard = new CreditCard({number:'0123'});
-	     newCard.name = "Mike Smith";
-	     newCard.$save();
-	     // POST: /user/123/card {number:'0123', name:'Mike Smith'}
-	     // server returns: {id:789, number:'0123', name: 'Mike Smith'};
-	     expect(newCard.id).toEqual(789);
-	 * ```
-	 *
-	 * The object returned from this function execution is a resource "class" which has "static" method
-	 * for each action in the definition.
-	 *
-	 * Calling these methods invoke `$http` on the `url` template with the given `method`, `params` and
-	 * `headers`.
-	 * When the data is returned from the server then the object is an instance of the resource type and
-	 * all of the non-GET methods are available with `$` prefix. This allows you to easily support CRUD
-	 * operations (create, read, update, delete) on server-side data.
-
-	   ```js
-	     var User = $resource('/user/:userId', {userId:'@id'});
-	     User.get({userId:123}, function(user) {
-	       user.abc = true;
-	       user.$save();
-	     });
-	   ```
-	 *
-	 * It's worth noting that the success callback for `get`, `query` and other methods gets passed
-	 * in the response that came from the server as well as $http header getter function, so one
-	 * could rewrite the above example and get access to http headers as:
-	 *
-	   ```js
-	     var User = $resource('/user/:userId', {userId:'@id'});
-	     User.get({userId:123}, function(u, getResponseHeaders){
-	       u.abc = true;
-	       u.$save(function(u, putResponseHeaders) {
-	         //u => saved user object
-	         //putResponseHeaders => $http header getter
-	       });
-	     });
-	   ```
-	 *
-	 * You can also access the raw `$http` promise via the `$promise` property on the object returned
-	 *
-	   ```
-	     var User = $resource('/user/:userId', {userId:'@id'});
-	     User.get({userId:123})
-	         .$promise.then(function(user) {
-	           $scope.user = user;
-	         });
-	   ```
-
-	 * # Creating a custom 'PUT' request
-	 * In this example we create a custom method on our resource to make a PUT request
-	 * ```js
-	 *		var app = angular.module('app', ['ngResource', 'ngRoute']);
-	 *
-	 *		// Some APIs expect a PUT request in the format URL/object/ID
-	 *		// Here we are creating an 'update' method
-	 *		app.factory('Notes', ['$resource', function($resource) {
-	 *    return $resource('/notes/:id', null,
-	 *        {
-	 *            'update': { method:'PUT' }
-	 *        });
-	 *		}]);
-	 *
-	 *		// In our controller we get the ID from the URL using ngRoute and $routeParams
-	 *		// We pass in $routeParams and our Notes factory along with $scope
-	 *		app.controller('NotesCtrl', ['$scope', '$routeParams', 'Notes',
-	                                      function($scope, $routeParams, Notes) {
-	 *    // First get a note object from the factory
-	 *    var note = Notes.get({ id:$routeParams.id });
-	 *    $id = note.id;
-	 *
-	 *    // Now call update passing in the ID first then the object you are updating
-	 *    Notes.update({ id:$id }, note);
-	 *
-	 *    // This will PUT /notes/ID with the note object in the request payload
-	 *		}]);
-	 * ```
-	 */
-	angular.module('ngResource', ['ng']).
-	  factory('$resource', ['$http', '$q', function($http, $q) {
-
-	    var DEFAULT_ACTIONS = {
-	      'get':    {method:'GET'},
-	      'save':   {method:'POST'},
-	      'query':  {method:'GET', isArray:true},
-	      'remove': {method:'DELETE'},
-	      'delete': {method:'DELETE'}
-	    };
-	    var noop = angular.noop,
-	        forEach = angular.forEach,
-	        extend = angular.extend,
-	        copy = angular.copy,
-	        isFunction = angular.isFunction;
-
-	    /**
-	     * We need our custom method because encodeURIComponent is too aggressive and doesn't follow
-	     * http://www.ietf.org/rfc/rfc3986.txt with regards to the character set (pchar) allowed in path
-	     * segments:
-	     *    segment       = *pchar
-	     *    pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
-	     *    pct-encoded   = "%" HEXDIG HEXDIG
-	     *    unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
-	     *    sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
-	     *                     / "*" / "+" / "," / ";" / "="
-	     */
-	    function encodeUriSegment(val) {
-	      return encodeUriQuery(val, true).
-	        replace(/%26/gi, '&').
-	        replace(/%3D/gi, '=').
-	        replace(/%2B/gi, '+');
-	    }
-
-
-	    /**
-	     * This method is intended for encoding *key* or *value* parts of query component. We need a
-	     * custom method because encodeURIComponent is too aggressive and encodes stuff that doesn't
-	     * have to be encoded per http://tools.ietf.org/html/rfc3986:
-	     *    query       = *( pchar / "/" / "?" )
-	     *    pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
-	     *    unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
-	     *    pct-encoded   = "%" HEXDIG HEXDIG
-	     *    sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
-	     *                     / "*" / "+" / "," / ";" / "="
-	     */
-	    function encodeUriQuery(val, pctEncodeSpaces) {
-	      return encodeURIComponent(val).
-	        replace(/%40/gi, '@').
-	        replace(/%3A/gi, ':').
-	        replace(/%24/g, '$').
-	        replace(/%2C/gi, ',').
-	        replace(/%20/g, (pctEncodeSpaces ? '%20' : '+'));
-	    }
-
-	    function Route(template, defaults) {
-	      this.template = template;
-	      this.defaults = defaults || {};
-	      this.urlParams = {};
-	    }
-
-	    Route.prototype = {
-	      setUrlParams: function(config, params, actionUrl) {
-	        var self = this,
-	            url = actionUrl || self.template,
-	            val,
-	            encodedVal;
-
-	        var urlParams = self.urlParams = {};
-	        forEach(url.split(/\W/), function(param){
-	          if (param === 'hasOwnProperty') {
-	            throw $resourceMinErr('badname', "hasOwnProperty is not a valid parameter name.");
-	          }
-	          if (!(new RegExp("^\\d+$").test(param)) && param &&
-	               (new RegExp("(^|[^\\\\]):" + param + "(\\W|$)").test(url))) {
-	            urlParams[param] = true;
-	          }
-	        });
-	        url = url.replace(/\\:/g, ':');
-
-	        params = params || {};
-	        forEach(self.urlParams, function(_, urlParam){
-	          val = params.hasOwnProperty(urlParam) ? params[urlParam] : self.defaults[urlParam];
-	          if (angular.isDefined(val) && val !== null) {
-	            encodedVal = encodeUriSegment(val);
-	            url = url.replace(new RegExp(":" + urlParam + "(\\W|$)", "g"), function(match, p1) {
-	              return encodedVal + p1;
-	            });
-	          } else {
-	            url = url.replace(new RegExp("(\/?):" + urlParam + "(\\W|$)", "g"), function(match,
-	                leadingSlashes, tail) {
-	              if (tail.charAt(0) == '/') {
-	                return tail;
-	              } else {
-	                return leadingSlashes + tail;
-	              }
-	            });
-	          }
-	        });
-
-	        // strip trailing slashes and set the url
-	        url = url.replace(/\/+$/, '') || '/';
-	        // then replace collapse `/.` if found in the last URL path segment before the query
-	        // E.g. `http://url.com/id./format?q=x` becomes `http://url.com/id.format?q=x`
-	        url = url.replace(/\/\.(?=\w+($|\?))/, '.');
-	        // replace escaped `/\.` with `/.`
-	        config.url = url.replace(/\/\\\./, '/.');
-
-
-	        // set params - delegate param encoding to $http
-	        forEach(params, function(value, key){
-	          if (!self.urlParams[key]) {
-	            config.params = config.params || {};
-	            config.params[key] = value;
-	          }
-	        });
-	      }
-	    };
-
-
-	    function resourceFactory(url, paramDefaults, actions) {
-	      var route = new Route(url);
-
-	      actions = extend({}, DEFAULT_ACTIONS, actions);
-
-	      function extractParams(data, actionParams){
-	        var ids = {};
-	        actionParams = extend({}, paramDefaults, actionParams);
-	        forEach(actionParams, function(value, key){
-	          if (isFunction(value)) { value = value(); }
-	          ids[key] = value && value.charAt && value.charAt(0) == '@' ?
-	            lookupDottedPath(data, value.substr(1)) : value;
-	        });
-	        return ids;
-	      }
-
-	      function defaultResponseInterceptor(response) {
-	        return response.resource;
-	      }
-
-	      function Resource(value){
-	        shallowClearAndCopy(value || {}, this);
-	      }
-
-	      forEach(actions, function(action, name) {
-	        var hasBody = /^(POST|PUT|PATCH)$/i.test(action.method);
-
-	        Resource[name] = function(a1, a2, a3, a4) {
-	          var params = {}, data, success, error;
-
-	          /* jshint -W086 */ /* (purposefully fall through case statements) */
-	          switch(arguments.length) {
-	          case 4:
-	            error = a4;
-	            success = a3;
-	            //fallthrough
-	          case 3:
-	          case 2:
-	            if (isFunction(a2)) {
-	              if (isFunction(a1)) {
-	                success = a1;
-	                error = a2;
-	                break;
-	              }
-
-	              success = a2;
-	              error = a3;
-	              //fallthrough
-	            } else {
-	              params = a1;
-	              data = a2;
-	              success = a3;
-	              break;
-	            }
-	          case 1:
-	            if (isFunction(a1)) success = a1;
-	            else if (hasBody) data = a1;
-	            else params = a1;
-	            break;
-	          case 0: break;
-	          default:
-	            throw $resourceMinErr('badargs',
-	              "Expected up to 4 arguments [params, data, success, error], got {0} arguments",
-	              arguments.length);
-	          }
-	          /* jshint +W086 */ /* (purposefully fall through case statements) */
-
-	          var isInstanceCall = this instanceof Resource;
-	          var value = isInstanceCall ? data : (action.isArray ? [] : new Resource(data));
-	          var httpConfig = {};
-	          var responseInterceptor = action.interceptor && action.interceptor.response ||
-	                                    defaultResponseInterceptor;
-	          var responseErrorInterceptor = action.interceptor && action.interceptor.responseError ||
-	                                    undefined;
-
-	          forEach(action, function(value, key) {
-	            if (key != 'params' && key != 'isArray' && key != 'interceptor') {
-	              httpConfig[key] = copy(value);
-	            }
-	          });
-
-	          if (hasBody) httpConfig.data = data;
-	          route.setUrlParams(httpConfig,
-	                             extend({}, extractParams(data, action.params || {}), params),
-	                             action.url);
-
-	          var promise = $http(httpConfig).then(function(response) {
-	            var data = response.data,
-	                promise = value.$promise;
-
-	            if (data) {
-	              // Need to convert action.isArray to boolean in case it is undefined
-	              // jshint -W018
-	              if (angular.isArray(data) !== (!!action.isArray)) {
-	                throw $resourceMinErr('badcfg', 'Error in resource configuration. Expected ' +
-	                  'response to contain an {0} but got an {1}',
-	                  action.isArray?'array':'object', angular.isArray(data)?'array':'object');
-	              }
-	              // jshint +W018
-	              if (action.isArray) {
-	                value.length = 0;
-	                forEach(data, function(item) {
-	                  value.push(new Resource(item));
-	                });
-	              } else {
-	                shallowClearAndCopy(data, value);
-	                value.$promise = promise;
-	              }
-	            }
-
-	            value.$resolved = true;
-
-	            response.resource = value;
-
-	            return response;
-	          }, function(response) {
-	            value.$resolved = true;
-
-	            (error||noop)(response);
-
-	            return $q.reject(response);
-	          });
-
-	          promise = promise.then(
-	              function(response) {
-	                var value = responseInterceptor(response);
-	                (success||noop)(value, response.headers);
-	                return value;
-	              },
-	              responseErrorInterceptor);
-
-	          if (!isInstanceCall) {
-	            // we are creating instance / collection
-	            // - set the initial promise
-	            // - return the instance / collection
-	            value.$promise = promise;
-	            value.$resolved = false;
-
-	            return value;
-	          }
-
-	          // instance call
-	          return promise;
-	        };
-
-
-	        Resource.prototype['$' + name] = function(params, success, error) {
-	          if (isFunction(params)) {
-	            error = success; success = params; params = {};
-	          }
-	          var result = Resource[name].call(this, params, this, success, error);
-	          return result.$promise || result;
-	        };
-	      });
-
-	      Resource.bind = function(additionalParamDefaults){
-	        return resourceFactory(url, extend({}, paramDefaults, additionalParamDefaults), actions);
-	      };
-
-	      return Resource;
-	    }
-
-	    return resourceFactory;
-	  }]);
-
-
-	})(window, window.angular);
-
-
-/***/ },
-/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -5408,7 +4209,1739 @@
 
 
 /***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * @license AngularJS v1.2.16
+	 * (c) 2010-2014 Google, Inc. http://angularjs.org
+	 * License: MIT
+	 */
+	(function(window, angular, undefined) {'use strict';
+
+	var $resourceMinErr = angular.$$minErr('$resource');
+
+	// Helper functions and regex to lookup a dotted path on an object
+	// stopping at undefined/null.  The path must be composed of ASCII
+	// identifiers (just like $parse)
+	var MEMBER_NAME_REGEX = /^(\.[a-zA-Z_$][0-9a-zA-Z_$]*)+$/;
+
+	function isValidDottedPath(path) {
+	  return (path != null && path !== '' && path !== 'hasOwnProperty' &&
+	      MEMBER_NAME_REGEX.test('.' + path));
+	}
+
+	function lookupDottedPath(obj, path) {
+	  if (!isValidDottedPath(path)) {
+	    throw $resourceMinErr('badmember', 'Dotted member path "@{0}" is invalid.', path);
+	  }
+	  var keys = path.split('.');
+	  for (var i = 0, ii = keys.length; i < ii && obj !== undefined; i++) {
+	    var key = keys[i];
+	    obj = (obj !== null) ? obj[key] : undefined;
+	  }
+	  return obj;
+	}
+
+	/**
+	 * Create a shallow copy of an object and clear other fields from the destination
+	 */
+	function shallowClearAndCopy(src, dst) {
+	  dst = dst || {};
+
+	  angular.forEach(dst, function(value, key){
+	    delete dst[key];
+	  });
+
+	  for (var key in src) {
+	    if (src.hasOwnProperty(key) && !(key.charAt(0) === '$' && key.charAt(1) === '$')) {
+	      dst[key] = src[key];
+	    }
+	  }
+
+	  return dst;
+	}
+
+	/**
+	 * @ngdoc module
+	 * @name ngResource
+	 * @description
+	 *
+	 * # ngResource
+	 *
+	 * The `ngResource` module provides interaction support with RESTful services
+	 * via the $resource service.
+	 *
+	 *
+	 * <div doc-module-components="ngResource"></div>
+	 *
+	 * See {@link ngResource.$resource `$resource`} for usage.
+	 */
+
+	/**
+	 * @ngdoc service
+	 * @name $resource
+	 * @requires $http
+	 *
+	 * @description
+	 * A factory which creates a resource object that lets you interact with
+	 * [RESTful](http://en.wikipedia.org/wiki/Representational_State_Transfer) server-side data sources.
+	 *
+	 * The returned resource object has action methods which provide high-level behaviors without
+	 * the need to interact with the low level {@link ng.$http $http} service.
+	 *
+	 * Requires the {@link ngResource `ngResource`} module to be installed.
+	 *
+	 * @param {string} url A parametrized URL template with parameters prefixed by `:` as in
+	 *   `/user/:username`. If you are using a URL with a port number (e.g.
+	 *   `http://example.com:8080/api`), it will be respected.
+	 *
+	 *   If you are using a url with a suffix, just add the suffix, like this:
+	 *   `$resource('http://example.com/resource.json')` or `$resource('http://example.com/:id.json')`
+	 *   or even `$resource('http://example.com/resource/:resource_id.:format')`
+	 *   If the parameter before the suffix is empty, :resource_id in this case, then the `/.` will be
+	 *   collapsed down to a single `.`.  If you need this sequence to appear and not collapse then you
+	 *   can escape it with `/\.`.
+	 *
+	 * @param {Object=} paramDefaults Default values for `url` parameters. These can be overridden in
+	 *   `actions` methods. If any of the parameter value is a function, it will be executed every time
+	 *   when a param value needs to be obtained for a request (unless the param was overridden).
+	 *
+	 *   Each key value in the parameter object is first bound to url template if present and then any
+	 *   excess keys are appended to the url search query after the `?`.
+	 *
+	 *   Given a template `/path/:verb` and parameter `{verb:'greet', salutation:'Hello'}` results in
+	 *   URL `/path/greet?salutation=Hello`.
+	 *
+	 *   If the parameter value is prefixed with `@` then the value of that parameter is extracted from
+	 *   the data object (useful for non-GET operations).
+	 *
+	 * @param {Object.<Object>=} actions Hash with declaration of custom action that should extend
+	 *   the default set of resource actions. The declaration should be created in the format of {@link
+	 *   ng.$http#usage_parameters $http.config}:
+	 *
+	 *       {action1: {method:?, params:?, isArray:?, headers:?, ...},
+	 *        action2: {method:?, params:?, isArray:?, headers:?, ...},
+	 *        ...}
+	 *
+	 *   Where:
+	 *
+	 *   - **`action`** – {string} – The name of action. This name becomes the name of the method on
+	 *     your resource object.
+	 *   - **`method`** – {string} – HTTP request method. Valid methods are: `GET`, `POST`, `PUT`,
+	 *     `DELETE`, and `JSONP`.
+	 *   - **`params`** – {Object=} – Optional set of pre-bound parameters for this action. If any of
+	 *     the parameter value is a function, it will be executed every time when a param value needs to
+	 *     be obtained for a request (unless the param was overridden).
+	 *   - **`url`** – {string} – action specific `url` override. The url templating is supported just
+	 *     like for the resource-level urls.
+	 *   - **`isArray`** – {boolean=} – If true then the returned object for this action is an array,
+	 *     see `returns` section.
+	 *   - **`transformRequest`** –
+	 *     `{function(data, headersGetter)|Array.<function(data, headersGetter)>}` –
+	 *     transform function or an array of such functions. The transform function takes the http
+	 *     request body and headers and returns its transformed (typically serialized) version.
+	 *   - **`transformResponse`** –
+	 *     `{function(data, headersGetter)|Array.<function(data, headersGetter)>}` –
+	 *     transform function or an array of such functions. The transform function takes the http
+	 *     response body and headers and returns its transformed (typically deserialized) version.
+	 *   - **`cache`** – `{boolean|Cache}` – If true, a default $http cache will be used to cache the
+	 *     GET request, otherwise if a cache instance built with
+	 *     {@link ng.$cacheFactory $cacheFactory}, this cache will be used for
+	 *     caching.
+	 *   - **`timeout`** – `{number|Promise}` – timeout in milliseconds, or {@link ng.$q promise} that
+	 *     should abort the request when resolved.
+	 *   - **`withCredentials`** - `{boolean}` - whether to set the `withCredentials` flag on the
+	 *     XHR object. See
+	 *     [requests with credentials](https://developer.mozilla.org/en/http_access_control#section_5)
+	 *     for more information.
+	 *   - **`responseType`** - `{string}` - see
+	 *     [requestType](https://developer.mozilla.org/en-US/docs/DOM/XMLHttpRequest#responseType).
+	 *   - **`interceptor`** - `{Object=}` - The interceptor object has two optional methods -
+	 *     `response` and `responseError`. Both `response` and `responseError` interceptors get called
+	 *     with `http response` object. See {@link ng.$http $http interceptors}.
+	 *
+	 * @returns {Object} A resource "class" object with methods for the default set of resource actions
+	 *   optionally extended with custom `actions`. The default set contains these actions:
+	 *   ```js
+	 *   { 'get':    {method:'GET'},
+	 *     'save':   {method:'POST'},
+	 *     'query':  {method:'GET', isArray:true},
+	 *     'remove': {method:'DELETE'},
+	 *     'delete': {method:'DELETE'} };
+	 *   ```
+	 *
+	 *   Calling these methods invoke an {@link ng.$http} with the specified http method,
+	 *   destination and parameters. When the data is returned from the server then the object is an
+	 *   instance of the resource class. The actions `save`, `remove` and `delete` are available on it
+	 *   as  methods with the `$` prefix. This allows you to easily perform CRUD operations (create,
+	 *   read, update, delete) on server-side data like this:
+	 *   ```js
+	 *   var User = $resource('/user/:userId', {userId:'@id'});
+	 *   var user = User.get({userId:123}, function() {
+	 *     user.abc = true;
+	 *     user.$save();
+	 *   });
+	 *   ```
+	 *
+	 *   It is important to realize that invoking a $resource object method immediately returns an
+	 *   empty reference (object or array depending on `isArray`). Once the data is returned from the
+	 *   server the existing reference is populated with the actual data. This is a useful trick since
+	 *   usually the resource is assigned to a model which is then rendered by the view. Having an empty
+	 *   object results in no rendering, once the data arrives from the server then the object is
+	 *   populated with the data and the view automatically re-renders itself showing the new data. This
+	 *   means that in most cases one never has to write a callback function for the action methods.
+	 *
+	 *   The action methods on the class object or instance object can be invoked with the following
+	 *   parameters:
+	 *
+	 *   - HTTP GET "class" actions: `Resource.action([parameters], [success], [error])`
+	 *   - non-GET "class" actions: `Resource.action([parameters], postData, [success], [error])`
+	 *   - non-GET instance actions:  `instance.$action([parameters], [success], [error])`
+	 *
+	 *   Success callback is called with (value, responseHeaders) arguments. Error callback is called
+	 *   with (httpResponse) argument.
+	 *
+	 *   Class actions return empty instance (with additional properties below).
+	 *   Instance actions return promise of the action.
+	 *
+	 *   The Resource instances and collection have these additional properties:
+	 *
+	 *   - `$promise`: the {@link ng.$q promise} of the original server interaction that created this
+	 *     instance or collection.
+	 *
+	 *     On success, the promise is resolved with the same resource instance or collection object,
+	 *     updated with data from server. This makes it easy to use in
+	 *     {@link ngRoute.$routeProvider resolve section of $routeProvider.when()} to defer view
+	 *     rendering until the resource(s) are loaded.
+	 *
+	 *     On failure, the promise is resolved with the {@link ng.$http http response} object, without
+	 *     the `resource` property.
+	 *
+	 *     If an interceptor object was provided, the promise will instead be resolved with the value
+	 *     returned by the interceptor.
+	 *
+	 *   - `$resolved`: `true` after first server interaction is completed (either with success or
+	 *      rejection), `false` before that. Knowing if the Resource has been resolved is useful in
+	 *      data-binding.
+	 *
+	 * @example
+	 *
+	 * # Credit card resource
+	 *
+	 * ```js
+	     // Define CreditCard class
+	     var CreditCard = $resource('/user/:userId/card/:cardId',
+	      {userId:123, cardId:'@id'}, {
+	       charge: {method:'POST', params:{charge:true}}
+	      });
+
+	     // We can retrieve a collection from the server
+	     var cards = CreditCard.query(function() {
+	       // GET: /user/123/card
+	       // server returns: [ {id:456, number:'1234', name:'Smith'} ];
+
+	       var card = cards[0];
+	       // each item is an instance of CreditCard
+	       expect(card instanceof CreditCard).toEqual(true);
+	       card.name = "J. Smith";
+	       // non GET methods are mapped onto the instances
+	       card.$save();
+	       // POST: /user/123/card/456 {id:456, number:'1234', name:'J. Smith'}
+	       // server returns: {id:456, number:'1234', name: 'J. Smith'};
+
+	       // our custom method is mapped as well.
+	       card.$charge({amount:9.99});
+	       // POST: /user/123/card/456?amount=9.99&charge=true {id:456, number:'1234', name:'J. Smith'}
+	     });
+
+	     // we can create an instance as well
+	     var newCard = new CreditCard({number:'0123'});
+	     newCard.name = "Mike Smith";
+	     newCard.$save();
+	     // POST: /user/123/card {number:'0123', name:'Mike Smith'}
+	     // server returns: {id:789, number:'0123', name: 'Mike Smith'};
+	     expect(newCard.id).toEqual(789);
+	 * ```
+	 *
+	 * The object returned from this function execution is a resource "class" which has "static" method
+	 * for each action in the definition.
+	 *
+	 * Calling these methods invoke `$http` on the `url` template with the given `method`, `params` and
+	 * `headers`.
+	 * When the data is returned from the server then the object is an instance of the resource type and
+	 * all of the non-GET methods are available with `$` prefix. This allows you to easily support CRUD
+	 * operations (create, read, update, delete) on server-side data.
+
+	   ```js
+	     var User = $resource('/user/:userId', {userId:'@id'});
+	     User.get({userId:123}, function(user) {
+	       user.abc = true;
+	       user.$save();
+	     });
+	   ```
+	 *
+	 * It's worth noting that the success callback for `get`, `query` and other methods gets passed
+	 * in the response that came from the server as well as $http header getter function, so one
+	 * could rewrite the above example and get access to http headers as:
+	 *
+	   ```js
+	     var User = $resource('/user/:userId', {userId:'@id'});
+	     User.get({userId:123}, function(u, getResponseHeaders){
+	       u.abc = true;
+	       u.$save(function(u, putResponseHeaders) {
+	         //u => saved user object
+	         //putResponseHeaders => $http header getter
+	       });
+	     });
+	   ```
+	 *
+	 * You can also access the raw `$http` promise via the `$promise` property on the object returned
+	 *
+	   ```
+	     var User = $resource('/user/:userId', {userId:'@id'});
+	     User.get({userId:123})
+	         .$promise.then(function(user) {
+	           $scope.user = user;
+	         });
+	   ```
+
+	 * # Creating a custom 'PUT' request
+	 * In this example we create a custom method on our resource to make a PUT request
+	 * ```js
+	 *		var app = angular.module('app', ['ngResource', 'ngRoute']);
+	 *
+	 *		// Some APIs expect a PUT request in the format URL/object/ID
+	 *		// Here we are creating an 'update' method
+	 *		app.factory('Notes', ['$resource', function($resource) {
+	 *    return $resource('/notes/:id', null,
+	 *        {
+	 *            'update': { method:'PUT' }
+	 *        });
+	 *		}]);
+	 *
+	 *		// In our controller we get the ID from the URL using ngRoute and $routeParams
+	 *		// We pass in $routeParams and our Notes factory along with $scope
+	 *		app.controller('NotesCtrl', ['$scope', '$routeParams', 'Notes',
+	                                      function($scope, $routeParams, Notes) {
+	 *    // First get a note object from the factory
+	 *    var note = Notes.get({ id:$routeParams.id });
+	 *    $id = note.id;
+	 *
+	 *    // Now call update passing in the ID first then the object you are updating
+	 *    Notes.update({ id:$id }, note);
+	 *
+	 *    // This will PUT /notes/ID with the note object in the request payload
+	 *		}]);
+	 * ```
+	 */
+	angular.module('ngResource', ['ng']).
+	  factory('$resource', ['$http', '$q', function($http, $q) {
+
+	    var DEFAULT_ACTIONS = {
+	      'get':    {method:'GET'},
+	      'save':   {method:'POST'},
+	      'query':  {method:'GET', isArray:true},
+	      'remove': {method:'DELETE'},
+	      'delete': {method:'DELETE'}
+	    };
+	    var noop = angular.noop,
+	        forEach = angular.forEach,
+	        extend = angular.extend,
+	        copy = angular.copy,
+	        isFunction = angular.isFunction;
+
+	    /**
+	     * We need our custom method because encodeURIComponent is too aggressive and doesn't follow
+	     * http://www.ietf.org/rfc/rfc3986.txt with regards to the character set (pchar) allowed in path
+	     * segments:
+	     *    segment       = *pchar
+	     *    pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
+	     *    pct-encoded   = "%" HEXDIG HEXDIG
+	     *    unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
+	     *    sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
+	     *                     / "*" / "+" / "," / ";" / "="
+	     */
+	    function encodeUriSegment(val) {
+	      return encodeUriQuery(val, true).
+	        replace(/%26/gi, '&').
+	        replace(/%3D/gi, '=').
+	        replace(/%2B/gi, '+');
+	    }
+
+
+	    /**
+	     * This method is intended for encoding *key* or *value* parts of query component. We need a
+	     * custom method because encodeURIComponent is too aggressive and encodes stuff that doesn't
+	     * have to be encoded per http://tools.ietf.org/html/rfc3986:
+	     *    query       = *( pchar / "/" / "?" )
+	     *    pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
+	     *    unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
+	     *    pct-encoded   = "%" HEXDIG HEXDIG
+	     *    sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
+	     *                     / "*" / "+" / "," / ";" / "="
+	     */
+	    function encodeUriQuery(val, pctEncodeSpaces) {
+	      return encodeURIComponent(val).
+	        replace(/%40/gi, '@').
+	        replace(/%3A/gi, ':').
+	        replace(/%24/g, '$').
+	        replace(/%2C/gi, ',').
+	        replace(/%20/g, (pctEncodeSpaces ? '%20' : '+'));
+	    }
+
+	    function Route(template, defaults) {
+	      this.template = template;
+	      this.defaults = defaults || {};
+	      this.urlParams = {};
+	    }
+
+	    Route.prototype = {
+	      setUrlParams: function(config, params, actionUrl) {
+	        var self = this,
+	            url = actionUrl || self.template,
+	            val,
+	            encodedVal;
+
+	        var urlParams = self.urlParams = {};
+	        forEach(url.split(/\W/), function(param){
+	          if (param === 'hasOwnProperty') {
+	            throw $resourceMinErr('badname', "hasOwnProperty is not a valid parameter name.");
+	          }
+	          if (!(new RegExp("^\\d+$").test(param)) && param &&
+	               (new RegExp("(^|[^\\\\]):" + param + "(\\W|$)").test(url))) {
+	            urlParams[param] = true;
+	          }
+	        });
+	        url = url.replace(/\\:/g, ':');
+
+	        params = params || {};
+	        forEach(self.urlParams, function(_, urlParam){
+	          val = params.hasOwnProperty(urlParam) ? params[urlParam] : self.defaults[urlParam];
+	          if (angular.isDefined(val) && val !== null) {
+	            encodedVal = encodeUriSegment(val);
+	            url = url.replace(new RegExp(":" + urlParam + "(\\W|$)", "g"), function(match, p1) {
+	              return encodedVal + p1;
+	            });
+	          } else {
+	            url = url.replace(new RegExp("(\/?):" + urlParam + "(\\W|$)", "g"), function(match,
+	                leadingSlashes, tail) {
+	              if (tail.charAt(0) == '/') {
+	                return tail;
+	              } else {
+	                return leadingSlashes + tail;
+	              }
+	            });
+	          }
+	        });
+
+	        // strip trailing slashes and set the url
+	        url = url.replace(/\/+$/, '') || '/';
+	        // then replace collapse `/.` if found in the last URL path segment before the query
+	        // E.g. `http://url.com/id./format?q=x` becomes `http://url.com/id.format?q=x`
+	        url = url.replace(/\/\.(?=\w+($|\?))/, '.');
+	        // replace escaped `/\.` with `/.`
+	        config.url = url.replace(/\/\\\./, '/.');
+
+
+	        // set params - delegate param encoding to $http
+	        forEach(params, function(value, key){
+	          if (!self.urlParams[key]) {
+	            config.params = config.params || {};
+	            config.params[key] = value;
+	          }
+	        });
+	      }
+	    };
+
+
+	    function resourceFactory(url, paramDefaults, actions) {
+	      var route = new Route(url);
+
+	      actions = extend({}, DEFAULT_ACTIONS, actions);
+
+	      function extractParams(data, actionParams){
+	        var ids = {};
+	        actionParams = extend({}, paramDefaults, actionParams);
+	        forEach(actionParams, function(value, key){
+	          if (isFunction(value)) { value = value(); }
+	          ids[key] = value && value.charAt && value.charAt(0) == '@' ?
+	            lookupDottedPath(data, value.substr(1)) : value;
+	        });
+	        return ids;
+	      }
+
+	      function defaultResponseInterceptor(response) {
+	        return response.resource;
+	      }
+
+	      function Resource(value){
+	        shallowClearAndCopy(value || {}, this);
+	      }
+
+	      forEach(actions, function(action, name) {
+	        var hasBody = /^(POST|PUT|PATCH)$/i.test(action.method);
+
+	        Resource[name] = function(a1, a2, a3, a4) {
+	          var params = {}, data, success, error;
+
+	          /* jshint -W086 */ /* (purposefully fall through case statements) */
+	          switch(arguments.length) {
+	          case 4:
+	            error = a4;
+	            success = a3;
+	            //fallthrough
+	          case 3:
+	          case 2:
+	            if (isFunction(a2)) {
+	              if (isFunction(a1)) {
+	                success = a1;
+	                error = a2;
+	                break;
+	              }
+
+	              success = a2;
+	              error = a3;
+	              //fallthrough
+	            } else {
+	              params = a1;
+	              data = a2;
+	              success = a3;
+	              break;
+	            }
+	          case 1:
+	            if (isFunction(a1)) success = a1;
+	            else if (hasBody) data = a1;
+	            else params = a1;
+	            break;
+	          case 0: break;
+	          default:
+	            throw $resourceMinErr('badargs',
+	              "Expected up to 4 arguments [params, data, success, error], got {0} arguments",
+	              arguments.length);
+	          }
+	          /* jshint +W086 */ /* (purposefully fall through case statements) */
+
+	          var isInstanceCall = this instanceof Resource;
+	          var value = isInstanceCall ? data : (action.isArray ? [] : new Resource(data));
+	          var httpConfig = {};
+	          var responseInterceptor = action.interceptor && action.interceptor.response ||
+	                                    defaultResponseInterceptor;
+	          var responseErrorInterceptor = action.interceptor && action.interceptor.responseError ||
+	                                    undefined;
+
+	          forEach(action, function(value, key) {
+	            if (key != 'params' && key != 'isArray' && key != 'interceptor') {
+	              httpConfig[key] = copy(value);
+	            }
+	          });
+
+	          if (hasBody) httpConfig.data = data;
+	          route.setUrlParams(httpConfig,
+	                             extend({}, extractParams(data, action.params || {}), params),
+	                             action.url);
+
+	          var promise = $http(httpConfig).then(function(response) {
+	            var data = response.data,
+	                promise = value.$promise;
+
+	            if (data) {
+	              // Need to convert action.isArray to boolean in case it is undefined
+	              // jshint -W018
+	              if (angular.isArray(data) !== (!!action.isArray)) {
+	                throw $resourceMinErr('badcfg', 'Error in resource configuration. Expected ' +
+	                  'response to contain an {0} but got an {1}',
+	                  action.isArray?'array':'object', angular.isArray(data)?'array':'object');
+	              }
+	              // jshint +W018
+	              if (action.isArray) {
+	                value.length = 0;
+	                forEach(data, function(item) {
+	                  value.push(new Resource(item));
+	                });
+	              } else {
+	                shallowClearAndCopy(data, value);
+	                value.$promise = promise;
+	              }
+	            }
+
+	            value.$resolved = true;
+
+	            response.resource = value;
+
+	            return response;
+	          }, function(response) {
+	            value.$resolved = true;
+
+	            (error||noop)(response);
+
+	            return $q.reject(response);
+	          });
+
+	          promise = promise.then(
+	              function(response) {
+	                var value = responseInterceptor(response);
+	                (success||noop)(value, response.headers);
+	                return value;
+	              },
+	              responseErrorInterceptor);
+
+	          if (!isInstanceCall) {
+	            // we are creating instance / collection
+	            // - set the initial promise
+	            // - return the instance / collection
+	            value.$promise = promise;
+	            value.$resolved = false;
+
+	            return value;
+	          }
+
+	          // instance call
+	          return promise;
+	        };
+
+
+	        Resource.prototype['$' + name] = function(params, success, error) {
+	          if (isFunction(params)) {
+	            error = success; success = params; params = {};
+	          }
+	          var result = Resource[name].call(this, params, this, success, error);
+	          return result.$promise || result;
+	        };
+	      });
+
+	      Resource.bind = function(additionalParamDefaults){
+	        return resourceFactory(url, extend({}, paramDefaults, additionalParamDefaults), actions);
+	      };
+
+	      return Resource;
+	    }
+
+	    return resourceFactory;
+	  }]);
+
+
+	})(window, window.angular);
+
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Angular Carousel - Mobile friendly touch carousel for AngularJS
+	 * @version v0.2.2 - 2014-04-02
+	 * @link http://revolunet.github.com/angular-carousel
+	 * @author Julien Bouquillon <julien@revolunet.com>
+	 * @license MIT License, http://www.opensource.org/licenses/MIT
+	 */
+	/*global angular */
+
+	/*
+	Angular touch carousel with CSS GPU accel and slide buffering
+	http://github.com/revolunet/angular-carousel
+
+	*/
+
+	angular.module('angular-carousel', [
+	    'ngTouch'
+	]);
+
+	angular.module('angular-carousel')
+
+	.directive('rnCarouselControls', [function() {
+	  return {
+	    restrict: 'A',
+	    replace: true,
+	    scope: {
+	      items: '=',
+	      index: '='
+	    },
+	    link: function(scope, element, attrs) {
+	      scope.prev = function() {
+	        scope.index--;
+	      };
+	      scope.next = function() {
+	        scope.index++;
+	      };
+	    },
+	    template: '<div class="rn-carousel-controls">' +
+	                '<span class="rn-carousel-control rn-carousel-control-prev" ng-click="prev()" ng-if="index > 0"></span>' +
+	                '<span class="rn-carousel-control rn-carousel-control-next" ng-click="next()" ng-if="index < items.length - 1"></span>' +
+	              '</div>'
+	  };
+	}]);
+
+	angular.module('angular-carousel')
+
+	.directive('rnCarouselIndicators', [function() {
+	  return {
+	    restrict: 'A',
+	    replace: true,
+	    scope: {
+	      items: '=',
+	      index: '='
+	    },
+	    template: '<div class="rn-carousel-indicator">' +
+	                '<span ng-repeat="item in items" ng-click="$parent.index=$index" ng-class="{active: $index==$parent.index}"></span>' +
+	              '</div>'
+	  };
+	}]);
+
+	(function() {
+	    "use strict";
+
+	    angular.module('angular-carousel')
+
+	    .directive('rnCarousel', ['$swipe', '$window', '$document', '$parse', '$compile', '$rootScope', function($swipe, $window, $document, $parse, $compile, $rootScope) {
+	        // internal ids to allow multiple instances
+	        var carouselId = 0,
+	            // used to compute the sliding speed
+	            timeConstant = 75,
+	            // in container % how much we need to drag to trigger the slide change
+	            moveTreshold = 0.05,
+	            // in absolute pixels, at which distance the slide stick to the edge on release
+	            rubberTreshold = 3;
+
+	        var requestAnimationFrame = $window.requestAnimationFrame || $window.webkitRequestAnimationFrame || $window.mozRequestAnimationFrame;
+
+	        return {
+	            restrict: 'A',
+	            scope: true,
+	            compile: function(tElement, tAttributes) {
+	                // use the compile phase to customize the DOM
+	                var firstChildAttributes = tElement.children()[0].attributes,
+	                    isRepeatBased = false,
+	                    isBuffered = false,
+	                    slidesCount = 0,
+	                    isIndexBound = false,
+	                    repeatItem,
+	                    repeatCollection;
+
+	                // add CSS classes
+	                tElement.addClass('rn-carousel-slides');
+	                tElement.children().addClass('rn-carousel-slide');
+
+	                // try to find an ngRepeat expression
+	                // at this point, the attributes are not yet normalized so we need to try various syntax
+	                ['ng-repeat', 'data-ng-repeat', 'x-ng-repeat'].every(function(attr) {
+	                    var repeatAttribute = firstChildAttributes[attr];
+	                    if (angular.isDefined(repeatAttribute)) {
+	                        // ngRepeat regexp extracted from angular 1.2.7 src
+	                        var exprMatch = repeatAttribute.value.match(/^\s*([\s\S]+?)\s+in\s+([\s\S]+?)(?:\s+track\s+by\s+([\s\S]+?))?\s*$/),
+	                            trackProperty = exprMatch[3];
+
+	                        repeatItem = exprMatch[1];
+	                        repeatCollection = exprMatch[2];
+
+	                        if (repeatItem) {
+	                            if (angular.isDefined(tAttributes['rnCarouselBuffered'])) {
+	                                // update the current ngRepeat expression and add a slice operator if buffered
+	                                isBuffered = true;
+	                                repeatAttribute.value = repeatItem + ' in ' + repeatCollection + '|carouselSlice:carouselBufferIndex:carouselBufferSize';
+	                                if (trackProperty) {
+	                                    repeatAttribute.value += ' track by ' + trackProperty;
+	                                }
+	                            }
+	                            isRepeatBased = true;
+	                            return false;
+	                        }
+	                    }
+	                    return true;
+	                });
+
+	                return function(scope, iElement, iAttributes, containerCtrl) {
+
+	                    carouselId++;
+
+	                    var containerWidth,
+	                        transformProperty,
+	                        pressed,
+	                        startX,
+	                        amplitude,
+	                        offset = 0,
+	                        destination,
+	                        slidesCount = 0,
+	                        swipeMoved = false,
+	                        // javascript based animation easing
+	                        timestamp;
+
+	                    // add a wrapper div that will hide the overflow
+	                    var carousel = iElement.wrap("<div id='carousel-" + carouselId +"' class='rn-carousel-container'></div>"),
+	                        container = carousel.parent();
+
+	                    // if indicator or controls, setup the watch
+	                    if (angular.isDefined(iAttributes.rnCarouselIndicator) || angular.isDefined(iAttributes.rnCarouselControl)) {
+	                        updateIndicatorArray();
+	                        scope.$watch('carouselIndex', function(newValue) {
+	                            scope.indicatorIndex = newValue;
+	                        });
+	                        scope.$watch('indicatorIndex', function(newValue) {
+	                            goToSlide(newValue, true);
+	                        });
+
+	                    }
+
+	                    // enable carousel indicator
+	                    if (angular.isDefined(iAttributes.rnCarouselIndicator)) {
+	                        var indicator = $compile("<div id='carousel-" + carouselId +"-indicator' index='indicatorIndex' items='carouselIndicatorArray' rn-carousel-indicators class='rn-carousel-indicator'></div>")(scope);
+	                        container.append(indicator);
+	                    }
+
+	                    // enable carousel controls
+	                    if (angular.isDefined(iAttributes.rnCarouselControl)) {
+	                        var controls = $compile("<div id='carousel-" + carouselId +"-controls' index='indicatorIndex' items='carouselIndicatorArray' rn-carousel-controls class='rn-carousel-controls'></div>")(scope);
+	                        container.append(controls);
+	                    }
+
+	                    scope.carouselBufferIndex = 0;
+	                    scope.carouselBufferSize = 5;
+	                    scope.carouselIndex = 0;
+
+	                    // handle index databinding
+	                    if (iAttributes.rnCarouselIndex) {
+	                        var updateParentIndex = function(value) {
+	                            indexModel.assign(scope.$parent, value);
+	                        };
+	                        var indexModel = $parse(iAttributes.rnCarouselIndex);
+	                        if (angular.isFunction(indexModel.assign)) {
+	                            /* check if this property is assignable then watch it */
+	                            scope.$watch('carouselIndex', function(newValue) {
+	                                updateParentIndex(newValue);
+	                            });
+	                            scope.carouselIndex = indexModel(scope);
+	                            scope.$parent.$watch(indexModel, function(newValue, oldValue) {
+	                                if (newValue!==undefined) {
+	                                    if (newValue >= slidesCount) {
+	                                        newValue = slidesCount - 1;
+	                                        updateParentIndex(newValue);
+	                                    } else if (newValue < 0) {
+	                                        newValue = 0;
+	                                        updateParentIndex(newValue);
+	                                    }
+	                                    goToSlide(newValue, true);
+	                                }
+	                            });
+	                            isIndexBound = true;
+	                        } else if (!isNaN(iAttributes.rnCarouselIndex)) {
+	                          /* if user just set an initial number, set it */
+	                          scope.carouselIndex = parseInt(iAttributes.rnCarouselIndex, 10);
+	                        }
+	                    }
+
+	                    // watch the given collection
+	                    if (isRepeatBased) {
+	                        scope.$watchCollection(repeatCollection, function(newValue, oldValue) {
+	                            slidesCount = 0;
+	                            if (angular.isArray(newValue)) {
+	                                slidesCount = newValue.length;
+	                            } else if (angular.isObject(newValue)) {
+	                                slidesCount = Object.keys(newValue).length;
+	                            }
+	                            updateIndicatorArray();
+	                            if (!containerWidth) updateContainerWidth();
+	                            goToSlide(scope.carouselIndex);
+	                        });
+	                    } else {
+	                        slidesCount = iElement.children().length;
+	                        updateIndicatorArray();
+	                        updateContainerWidth();
+	                    }
+
+	                    function updateIndicatorArray() {
+	                        // generate an array to be used by the indicators
+	                        var items = [];
+	                        for (var i = 0; i < slidesCount; i++) items[i] = i;
+	                        scope.carouselIndicatorArray = items;
+	                    }
+
+	                    function getCarouselWidth() {
+	                       // container.css('width', 'auto');
+	                        var slides = carousel.children();
+	                        if (slides.length === 0) {
+	                            containerWidth = carousel[0].getBoundingClientRect().width;
+	                        } else {
+	                            containerWidth = slides[0].getBoundingClientRect().width;
+	                        }
+	                        // console.log('getCarouselWidth', containerWidth);
+	                        return containerWidth;
+	                    }
+
+	                    function updateContainerWidth() {
+	                        // force the carousel container width to match the first slide width
+	                        container.css('width', '100%');
+	                        var width = getCarouselWidth();
+	                        if (width) {
+	                            container.css('width', width + 'px');
+	                        }
+	                    }
+
+	                    function scroll(x) {
+	                        // use CSS 3D transform to move the carousel
+	                        if (isNaN(x)) {
+	                            x = scope.carouselIndex * containerWidth;
+	                        }
+
+	                        offset = x;
+	                        var move = -Math.round(offset);
+	                        move += (scope.carouselBufferIndex * containerWidth);
+
+	                        if(!is3dAvailable) {
+	                            carousel[0].style[transformProperty] = 'translate(' + move + 'px, 0)';
+	                        } else {
+	                            carousel[0].style[transformProperty] = 'translate3d(' + move + 'px, 0, 0)';
+	                        }
+	                    }
+
+	                    function autoScroll() {
+	                        // scroll smoothly to "destination" until we reach it
+	                        // using requestAnimationFrame
+	                        var elapsed, delta;
+
+	                        if (amplitude) {
+	                            elapsed = Date.now() - timestamp;
+	                            delta = amplitude * Math.exp(-elapsed / timeConstant);
+	                            if (delta > rubberTreshold || delta < -rubberTreshold) {
+	                                scroll(destination - delta);
+	                                /* We are using raf.js, a requestAnimationFrame polyfill, so
+	                                this will work on IE9 */
+	                                requestAnimationFrame(autoScroll);
+	                            } else {
+	                                goToSlide(destination / containerWidth);
+	                            }
+	                        }
+	                    }
+
+	                    function capIndex(idx) {
+	                        // ensure given index it inside bounds
+	                        return (idx >= slidesCount) ? slidesCount: (idx <= 0) ? 0 : idx;
+	                    }
+
+	                    function updateBufferIndex() {
+	                        // update and cap te buffer index
+	                        var bufferIndex = 0;
+	                        var bufferEdgeSize = (scope.carouselBufferSize - 1) / 2;
+	                        if (isBuffered) {
+	                            if (scope.carouselIndex <= bufferEdgeSize) {
+	                                bufferIndex = 0;
+	                            } else if (slidesCount < scope.carouselBufferSize) {
+	                                bufferIndex = 0;
+	                            } else if (scope.carouselIndex > slidesCount - scope.carouselBufferSize) {
+	                                bufferIndex = slidesCount - scope.carouselBufferSize;
+	                            } else {
+	                                bufferIndex = scope.carouselIndex - bufferEdgeSize;
+	                            }
+	                        }
+	                        scope.carouselBufferIndex = bufferIndex;
+	                    }
+
+	                    function goToSlide(i, animate) {
+	                        if (isNaN(i)) {
+	                            i = scope.carouselIndex;
+	                        }
+	                        if (animate) {
+	                            // simulate a swipe so we have the standard animation
+	                            // used when external binding index is updated or touch canceed
+	                            offset = (i * containerWidth);
+	                            swipeEnd(null, null, true);
+	                            return;
+	                        }
+	                        scope.carouselIndex = capIndex(i);
+	                        updateBufferIndex();
+	                        // if outside of angular scope, trigger angular digest cycle
+	                        // use local digest only for perfs if no index bound
+	                        if ($rootScope.$$phase!=='$apply' && $rootScope.$$phase!=='$digest') {
+	                            if (isIndexBound) {
+	                                scope.$apply();
+	                            } else {
+	                                scope.$digest();
+	                            }
+	                        }
+	                        scroll();
+	                    }
+
+	                    function getAbsMoveTreshold() {
+	                        // return min pixels required to move a slide
+	                        return moveTreshold * containerWidth;
+	                    }
+
+	                    function documentMouseUpEvent(event) {
+	                        // in case we click outside the carousel, trigger a fake swipeEnd
+	                        swipeMoved = true;
+	                        swipeEnd({
+	                            x: event.clientX,
+	                            y: event.clientY
+	                        }, event);
+	                    }
+
+	                    function capPosition(x) {
+	                        // limit position if start or end of slides
+	                        var position = x;
+	                        if (scope.carouselIndex===0) {
+	                            position = Math.max(-getAbsMoveTreshold(), position);
+	                        } else if (scope.carouselIndex===slidesCount-1) {
+	                            position = Math.min(((slidesCount-1)*containerWidth + getAbsMoveTreshold()), position);
+	                        }
+	                        return position;
+	                    }
+
+	                    function swipeStart(coords, event) {
+	                        //console.log('swipeStart', coords, event);
+	                        $document.bind('mouseup', documentMouseUpEvent);
+	                        pressed = true;
+	                        startX = coords.x;
+
+	                        amplitude = 0;
+	                        timestamp = Date.now();
+
+	                        return false;
+	                    }
+
+	                    function swipeMove(coords, event) {
+	                        //console.log('swipeMove', coords, event);
+	                        var x, delta;
+	                        if (pressed) {
+	                            x = coords.x;
+	                            delta = startX - x;
+	                            if (delta > 2 || delta < -2) {
+	                                swipeMoved = true;
+	                                startX = x;
+
+	                                /* We are using raf.js, a requestAnimationFrame polyfill, so
+	                                this will work on IE9 */
+	                                requestAnimationFrame(function() {
+	                                    scroll(capPosition(offset + delta));
+	                                });
+	                            }
+	                        }
+	                        return false;
+	                    }
+
+	                    function swipeEnd(coords, event, forceAnimation) {
+	                        //console.log('swipeEnd', 'scope.carouselIndex', scope.carouselIndex);
+
+	                        // Prevent clicks on buttons inside slider to trigger "swipeEnd" event on touchend/mouseup
+	                        if(event && !swipeMoved) {
+	                            return;
+	                        }
+
+	                        $document.unbind('mouseup', documentMouseUpEvent);
+	                        pressed = false;
+	                        swipeMoved = false;
+
+	                        destination = offset;
+
+	                        var minMove = getAbsMoveTreshold(),
+	                            currentOffset = (scope.carouselIndex * containerWidth),
+	                            absMove = currentOffset - destination,
+	                            slidesMove = -Math[absMove>=0?'ceil':'floor'](absMove / containerWidth),
+	                            shouldMove = Math.abs(absMove) > minMove;
+
+	                        if ((slidesMove + scope.carouselIndex) >= slidesCount ) {
+	                            slidesMove = slidesCount - 1 - scope.carouselIndex;
+	                        }
+	                        if ((slidesMove + scope.carouselIndex) < 0) {
+	                            slidesMove = -scope.carouselIndex;
+	                        }
+	                        var moveOffset = shouldMove?slidesMove:0;
+
+	                        destination = (moveOffset + scope.carouselIndex) * containerWidth;
+	                        amplitude = destination - offset;
+	                        timestamp = Date.now();
+	                        if (forceAnimation) {
+	                            amplitude = offset - currentOffset;
+	                        }
+	                        /* We are using raf.js, a requestAnimationFrame polyfill, so
+	                        this will work on IE9 */
+	                        requestAnimationFrame(autoScroll);
+
+	                        return false;
+	                    }
+
+	                    iAttributes.$observe('rnCarouselSwipe', function(newValue, oldValue) {
+	                        // only bind swipe when it's not switched off
+	                        if(newValue !== 'false' && newValue !== 'off') {
+	                            $swipe.bind(carousel, {
+	                                start: swipeStart,
+	                                move: swipeMove,
+	                                end: swipeEnd,
+	                                cancel: function(event) {
+	                                  swipeEnd({}, event);
+	                                }
+	                            });
+	                        } else {
+	                            // unbind swipe when it's switched off
+	                            carousel.unbind();
+	                        }
+	                    });
+
+	                    // initialise first slide only if no binding
+	                    // if so, the binding will trigger the first init
+	                    if (!isIndexBound) {
+	                        goToSlide(scope.carouselIndex);
+	                    }
+
+	                    // detect supported CSS property
+	                    transformProperty = 'transform';
+	                    ['webkit', 'Moz', 'O', 'ms'].every(function (prefix) {
+	                        var e = prefix + 'Transform';
+	                        if (typeof document.body.style[e] !== 'undefined') {
+	                            transformProperty = e;
+	                            return false;
+	                        }
+	                        return true;
+	                    });
+
+	                    //Detect support of translate3d
+	                    function detect3dSupport(){
+	                        var el = document.createElement('p'),
+	                        has3d,
+	                        transforms = {
+	                            'webkitTransform':'-webkit-transform',
+	                            'OTransform':'-o-transform',
+	                            'msTransform':'-ms-transform',
+	                            'MozTransform':'-moz-transform',
+	                            'transform':'transform'
+	                        };
+	                        // Add it to the body to get the computed style
+	                        document.body.insertBefore(el, null);
+	                        for(var t in transforms){
+	                            if( el.style[t] !== undefined ){
+	                                el.style[t] = 'translate3d(1px,1px,1px)';
+	                                has3d = window.getComputedStyle(el).getPropertyValue(transforms[t]);
+	                            }
+	                        }
+	                        document.body.removeChild(el);
+	                        return (has3d !== undefined && has3d.length > 0 && has3d !== "none");
+	                    }
+
+	                    var is3dAvailable = detect3dSupport();
+
+	                    function onOrientationChange() {
+	                        updateContainerWidth();
+	                        goToSlide();
+	                    }
+
+	                    // handle orientation change
+	                    var winEl = angular.element($window);
+	                    winEl.bind('orientationchange', onOrientationChange);
+	                    winEl.bind('resize', onOrientationChange);
+
+	                    scope.$on('$destroy', function() {
+	                        $document.unbind('mouseup', documentMouseUpEvent);
+	                        winEl.unbind('orientationchange', onOrientationChange);
+	                        winEl.unbind('resize', onOrientationChange);
+	                    });
+
+	                };
+	            }
+	        };
+	    }]);
+
+	})();
+
+	(function() {
+	    "use strict";
+
+	    angular.module('angular-carousel')
+
+	    .filter('carouselSlice', function() {
+	        return function(collection, start, size) {
+	            if (angular.isArray(collection)) {
+	                return collection.slice(start, start + size);
+	            } else if (angular.isObject(collection)) {
+	                // dont try to slice collections :)
+	                return collection;
+	            }
+	        };
+	    });
+
+	})();
+
+
+/***/ },
 /* 19 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * @license AngularJS v1.2.16
+	 * (c) 2010-2014 Google, Inc. http://angularjs.org
+	 * License: MIT
+	 */
+	(function(window, angular, undefined) {'use strict';
+
+	/**
+	 * @ngdoc module
+	 * @name ngTouch
+	 * @description
+	 *
+	 * # ngTouch
+	 *
+	 * The `ngTouch` module provides touch events and other helpers for touch-enabled devices.
+	 * The implementation is based on jQuery Mobile touch event handling
+	 * ([jquerymobile.com](http://jquerymobile.com/)).
+	 *
+	 *
+	 * See {@link ngTouch.$swipe `$swipe`} for usage.
+	 *
+	 * <div doc-module-components="ngTouch"></div>
+	 *
+	 */
+
+	// define ngTouch module
+	/* global -ngTouch */
+	var ngTouch = angular.module('ngTouch', []);
+
+	/* global ngTouch: false */
+
+	    /**
+	     * @ngdoc service
+	     * @name $swipe
+	     *
+	     * @description
+	     * The `$swipe` service is a service that abstracts the messier details of hold-and-drag swipe
+	     * behavior, to make implementing swipe-related directives more convenient.
+	     *
+	     * Requires the {@link ngTouch `ngTouch`} module to be installed.
+	     *
+	     * `$swipe` is used by the `ngSwipeLeft` and `ngSwipeRight` directives in `ngTouch`, and by
+	     * `ngCarousel` in a separate component.
+	     *
+	     * # Usage
+	     * The `$swipe` service is an object with a single method: `bind`. `bind` takes an element
+	     * which is to be watched for swipes, and an object with four handler functions. See the
+	     * documentation for `bind` below.
+	     */
+
+	ngTouch.factory('$swipe', [function() {
+	  // The total distance in any direction before we make the call on swipe vs. scroll.
+	  var MOVE_BUFFER_RADIUS = 10;
+
+	  function getCoordinates(event) {
+	    var touches = event.touches && event.touches.length ? event.touches : [event];
+	    var e = (event.changedTouches && event.changedTouches[0]) ||
+	        (event.originalEvent && event.originalEvent.changedTouches &&
+	            event.originalEvent.changedTouches[0]) ||
+	        touches[0].originalEvent || touches[0];
+
+	    return {
+	      x: e.clientX,
+	      y: e.clientY
+	    };
+	  }
+
+	  return {
+	    /**
+	     * @ngdoc method
+	     * @name $swipe#bind
+	     *
+	     * @description
+	     * The main method of `$swipe`. It takes an element to be watched for swipe motions, and an
+	     * object containing event handlers.
+	     *
+	     * The four events are `start`, `move`, `end`, and `cancel`. `start`, `move`, and `end`
+	     * receive as a parameter a coordinates object of the form `{ x: 150, y: 310 }`.
+	     *
+	     * `start` is called on either `mousedown` or `touchstart`. After this event, `$swipe` is
+	     * watching for `touchmove` or `mousemove` events. These events are ignored until the total
+	     * distance moved in either dimension exceeds a small threshold.
+	     *
+	     * Once this threshold is exceeded, either the horizontal or vertical delta is greater.
+	     * - If the horizontal distance is greater, this is a swipe and `move` and `end` events follow.
+	     * - If the vertical distance is greater, this is a scroll, and we let the browser take over.
+	     *   A `cancel` event is sent.
+	     *
+	     * `move` is called on `mousemove` and `touchmove` after the above logic has determined that
+	     * a swipe is in progress.
+	     *
+	     * `end` is called when a swipe is successfully completed with a `touchend` or `mouseup`.
+	     *
+	     * `cancel` is called either on a `touchcancel` from the browser, or when we begin scrolling
+	     * as described above.
+	     *
+	     */
+	    bind: function(element, eventHandlers) {
+	      // Absolute total movement, used to control swipe vs. scroll.
+	      var totalX, totalY;
+	      // Coordinates of the start position.
+	      var startCoords;
+	      // Last event's position.
+	      var lastPos;
+	      // Whether a swipe is active.
+	      var active = false;
+
+	      element.on('touchstart mousedown', function(event) {
+	        startCoords = getCoordinates(event);
+	        active = true;
+	        totalX = 0;
+	        totalY = 0;
+	        lastPos = startCoords;
+	        eventHandlers['start'] && eventHandlers['start'](startCoords, event);
+	      });
+
+	      element.on('touchcancel', function(event) {
+	        active = false;
+	        eventHandlers['cancel'] && eventHandlers['cancel'](event);
+	      });
+
+	      element.on('touchmove mousemove', function(event) {
+	        if (!active) return;
+
+	        // Android will send a touchcancel if it thinks we're starting to scroll.
+	        // So when the total distance (+ or - or both) exceeds 10px in either direction,
+	        // we either:
+	        // - On totalX > totalY, we send preventDefault() and treat this as a swipe.
+	        // - On totalY > totalX, we let the browser handle it as a scroll.
+
+	        if (!startCoords) return;
+	        var coords = getCoordinates(event);
+
+	        totalX += Math.abs(coords.x - lastPos.x);
+	        totalY += Math.abs(coords.y - lastPos.y);
+
+	        lastPos = coords;
+
+	        if (totalX < MOVE_BUFFER_RADIUS && totalY < MOVE_BUFFER_RADIUS) {
+	          return;
+	        }
+
+	        // One of totalX or totalY has exceeded the buffer, so decide on swipe vs. scroll.
+	        if (totalY > totalX) {
+	          // Allow native scrolling to take over.
+	          active = false;
+	          eventHandlers['cancel'] && eventHandlers['cancel'](event);
+	          return;
+	        } else {
+	          // Prevent the browser from scrolling.
+	          event.preventDefault();
+	          eventHandlers['move'] && eventHandlers['move'](coords, event);
+	        }
+	      });
+
+	      element.on('touchend mouseup', function(event) {
+	        if (!active) return;
+	        active = false;
+	        eventHandlers['end'] && eventHandlers['end'](getCoordinates(event), event);
+	      });
+	    }
+	  };
+	}]);
+
+	/* global ngTouch: false */
+
+	/**
+	 * @ngdoc directive
+	 * @name ngClick
+	 *
+	 * @description
+	 * A more powerful replacement for the default ngClick designed to be used on touchscreen
+	 * devices. Most mobile browsers wait about 300ms after a tap-and-release before sending
+	 * the click event. This version handles them immediately, and then prevents the
+	 * following click event from propagating.
+	 *
+	 * Requires the {@link ngTouch `ngTouch`} module to be installed.
+	 *
+	 * This directive can fall back to using an ordinary click event, and so works on desktop
+	 * browsers as well as mobile.
+	 *
+	 * This directive also sets the CSS class `ng-click-active` while the element is being held
+	 * down (by a mouse click or touch) so you can restyle the depressed element if you wish.
+	 *
+	 * @element ANY
+	 * @param {expression} ngClick {@link guide/expression Expression} to evaluate
+	 * upon tap. (Event object is available as `$event`)
+	 *
+	 * @example
+	    <example>
+	      <file name="index.html">
+	        <button ng-click="count = count + 1" ng-init="count=0">
+	          Increment
+	        </button>
+	        count: {{ count }}
+	      </file>
+	    </example>
+	 */
+
+	ngTouch.config(['$provide', function($provide) {
+	  $provide.decorator('ngClickDirective', ['$delegate', function($delegate) {
+	    // drop the default ngClick directive
+	    $delegate.shift();
+	    return $delegate;
+	  }]);
+	}]);
+
+	ngTouch.directive('ngClick', ['$parse', '$timeout', '$rootElement',
+	    function($parse, $timeout, $rootElement) {
+	  var TAP_DURATION = 750; // Shorter than 750ms is a tap, longer is a taphold or drag.
+	  var MOVE_TOLERANCE = 12; // 12px seems to work in most mobile browsers.
+	  var PREVENT_DURATION = 2500; // 2.5 seconds maximum from preventGhostClick call to click
+	  var CLICKBUSTER_THRESHOLD = 25; // 25 pixels in any dimension is the limit for busting clicks.
+
+	  var ACTIVE_CLASS_NAME = 'ng-click-active';
+	  var lastPreventedTime;
+	  var touchCoordinates;
+	  var lastLabelClickCoordinates;
+
+
+	  // TAP EVENTS AND GHOST CLICKS
+	  //
+	  // Why tap events?
+	  // Mobile browsers detect a tap, then wait a moment (usually ~300ms) to see if you're
+	  // double-tapping, and then fire a click event.
+	  //
+	  // This delay sucks and makes mobile apps feel unresponsive.
+	  // So we detect touchstart, touchmove, touchcancel and touchend ourselves and determine when
+	  // the user has tapped on something.
+	  //
+	  // What happens when the browser then generates a click event?
+	  // The browser, of course, also detects the tap and fires a click after a delay. This results in
+	  // tapping/clicking twice. So we do "clickbusting" to prevent it.
+	  //
+	  // How does it work?
+	  // We attach global touchstart and click handlers, that run during the capture (early) phase.
+	  // So the sequence for a tap is:
+	  // - global touchstart: Sets an "allowable region" at the point touched.
+	  // - element's touchstart: Starts a touch
+	  // (- touchmove or touchcancel ends the touch, no click follows)
+	  // - element's touchend: Determines if the tap is valid (didn't move too far away, didn't hold
+	  //   too long) and fires the user's tap handler. The touchend also calls preventGhostClick().
+	  // - preventGhostClick() removes the allowable region the global touchstart created.
+	  // - The browser generates a click event.
+	  // - The global click handler catches the click, and checks whether it was in an allowable region.
+	  //     - If preventGhostClick was called, the region will have been removed, the click is busted.
+	  //     - If the region is still there, the click proceeds normally. Therefore clicks on links and
+	  //       other elements without ngTap on them work normally.
+	  //
+	  // This is an ugly, terrible hack!
+	  // Yeah, tell me about it. The alternatives are using the slow click events, or making our users
+	  // deal with the ghost clicks, so I consider this the least of evils. Fortunately Angular
+	  // encapsulates this ugly logic away from the user.
+	  //
+	  // Why not just put click handlers on the element?
+	  // We do that too, just to be sure. The problem is that the tap event might have caused the DOM
+	  // to change, so that the click fires in the same position but something else is there now. So
+	  // the handlers are global and care only about coordinates and not elements.
+
+	  // Checks if the coordinates are close enough to be within the region.
+	  function hit(x1, y1, x2, y2) {
+	    return Math.abs(x1 - x2) < CLICKBUSTER_THRESHOLD && Math.abs(y1 - y2) < CLICKBUSTER_THRESHOLD;
+	  }
+
+	  // Checks a list of allowable regions against a click location.
+	  // Returns true if the click should be allowed.
+	  // Splices out the allowable region from the list after it has been used.
+	  function checkAllowableRegions(touchCoordinates, x, y) {
+	    for (var i = 0; i < touchCoordinates.length; i += 2) {
+	      if (hit(touchCoordinates[i], touchCoordinates[i+1], x, y)) {
+	        touchCoordinates.splice(i, i + 2);
+	        return true; // allowable region
+	      }
+	    }
+	    return false; // No allowable region; bust it.
+	  }
+
+	  // Global click handler that prevents the click if it's in a bustable zone and preventGhostClick
+	  // was called recently.
+	  function onClick(event) {
+	    if (Date.now() - lastPreventedTime > PREVENT_DURATION) {
+	      return; // Too old.
+	    }
+
+	    var touches = event.touches && event.touches.length ? event.touches : [event];
+	    var x = touches[0].clientX;
+	    var y = touches[0].clientY;
+	    // Work around desktop Webkit quirk where clicking a label will fire two clicks (on the label
+	    // and on the input element). Depending on the exact browser, this second click we don't want
+	    // to bust has either (0,0), negative coordinates, or coordinates equal to triggering label
+	    // click event
+	    if (x < 1 && y < 1) {
+	      return; // offscreen
+	    }
+	    if (lastLabelClickCoordinates &&
+	        lastLabelClickCoordinates[0] === x && lastLabelClickCoordinates[1] === y) {
+	      return; // input click triggered by label click
+	    }
+	    // reset label click coordinates on first subsequent click
+	    if (lastLabelClickCoordinates) {
+	      lastLabelClickCoordinates = null;
+	    }
+	    // remember label click coordinates to prevent click busting of trigger click event on input
+	    if (event.target.tagName.toLowerCase() === 'label') {
+	      lastLabelClickCoordinates = [x, y];
+	    }
+
+	    // Look for an allowable region containing this click.
+	    // If we find one, that means it was created by touchstart and not removed by
+	    // preventGhostClick, so we don't bust it.
+	    if (checkAllowableRegions(touchCoordinates, x, y)) {
+	      return;
+	    }
+
+	    // If we didn't find an allowable region, bust the click.
+	    event.stopPropagation();
+	    event.preventDefault();
+
+	    // Blur focused form elements
+	    event.target && event.target.blur();
+	  }
+
+
+	  // Global touchstart handler that creates an allowable region for a click event.
+	  // This allowable region can be removed by preventGhostClick if we want to bust it.
+	  function onTouchStart(event) {
+	    var touches = event.touches && event.touches.length ? event.touches : [event];
+	    var x = touches[0].clientX;
+	    var y = touches[0].clientY;
+	    touchCoordinates.push(x, y);
+
+	    $timeout(function() {
+	      // Remove the allowable region.
+	      for (var i = 0; i < touchCoordinates.length; i += 2) {
+	        if (touchCoordinates[i] == x && touchCoordinates[i+1] == y) {
+	          touchCoordinates.splice(i, i + 2);
+	          return;
+	        }
+	      }
+	    }, PREVENT_DURATION, false);
+	  }
+
+	  // On the first call, attaches some event handlers. Then whenever it gets called, it creates a
+	  // zone around the touchstart where clicks will get busted.
+	  function preventGhostClick(x, y) {
+	    if (!touchCoordinates) {
+	      $rootElement[0].addEventListener('click', onClick, true);
+	      $rootElement[0].addEventListener('touchstart', onTouchStart, true);
+	      touchCoordinates = [];
+	    }
+
+	    lastPreventedTime = Date.now();
+
+	    checkAllowableRegions(touchCoordinates, x, y);
+	  }
+
+	  // Actual linking function.
+	  return function(scope, element, attr) {
+	    var clickHandler = $parse(attr.ngClick),
+	        tapping = false,
+	        tapElement,  // Used to blur the element after a tap.
+	        startTime,   // Used to check if the tap was held too long.
+	        touchStartX,
+	        touchStartY;
+
+	    function resetState() {
+	      tapping = false;
+	      element.removeClass(ACTIVE_CLASS_NAME);
+	    }
+
+	    element.on('touchstart', function(event) {
+	      tapping = true;
+	      tapElement = event.target ? event.target : event.srcElement; // IE uses srcElement.
+	      // Hack for Safari, which can target text nodes instead of containers.
+	      if(tapElement.nodeType == 3) {
+	        tapElement = tapElement.parentNode;
+	      }
+
+	      element.addClass(ACTIVE_CLASS_NAME);
+
+	      startTime = Date.now();
+
+	      var touches = event.touches && event.touches.length ? event.touches : [event];
+	      var e = touches[0].originalEvent || touches[0];
+	      touchStartX = e.clientX;
+	      touchStartY = e.clientY;
+	    });
+
+	    element.on('touchmove', function(event) {
+	      resetState();
+	    });
+
+	    element.on('touchcancel', function(event) {
+	      resetState();
+	    });
+
+	    element.on('touchend', function(event) {
+	      var diff = Date.now() - startTime;
+
+	      var touches = (event.changedTouches && event.changedTouches.length) ? event.changedTouches :
+	          ((event.touches && event.touches.length) ? event.touches : [event]);
+	      var e = touches[0].originalEvent || touches[0];
+	      var x = e.clientX;
+	      var y = e.clientY;
+	      var dist = Math.sqrt( Math.pow(x - touchStartX, 2) + Math.pow(y - touchStartY, 2) );
+
+	      if (tapping && diff < TAP_DURATION && dist < MOVE_TOLERANCE) {
+	        // Call preventGhostClick so the clickbuster will catch the corresponding click.
+	        preventGhostClick(x, y);
+
+	        // Blur the focused element (the button, probably) before firing the callback.
+	        // This doesn't work perfectly on Android Chrome, but seems to work elsewhere.
+	        // I couldn't get anything to work reliably on Android Chrome.
+	        if (tapElement) {
+	          tapElement.blur();
+	        }
+
+	        if (!angular.isDefined(attr.disabled) || attr.disabled === false) {
+	          element.triggerHandler('click', [event]);
+	        }
+	      }
+
+	      resetState();
+	    });
+
+	    // Hack for iOS Safari's benefit. It goes searching for onclick handlers and is liable to click
+	    // something else nearby.
+	    element.onclick = function(event) { };
+
+	    // Actual click handler.
+	    // There are three different kinds of clicks, only two of which reach this point.
+	    // - On desktop browsers without touch events, their clicks will always come here.
+	    // - On mobile browsers, the simulated "fast" click will call this.
+	    // - But the browser's follow-up slow click will be "busted" before it reaches this handler.
+	    // Therefore it's safe to use this directive on both mobile and desktop.
+	    element.on('click', function(event, touchend) {
+	      scope.$apply(function() {
+	        clickHandler(scope, {$event: (touchend || event)});
+	      });
+	    });
+
+	    element.on('mousedown', function(event) {
+	      element.addClass(ACTIVE_CLASS_NAME);
+	    });
+
+	    element.on('mousemove mouseup', function(event) {
+	      element.removeClass(ACTIVE_CLASS_NAME);
+	    });
+
+	  };
+	}]);
+
+	/* global ngTouch: false */
+
+	/**
+	 * @ngdoc directive
+	 * @name ngSwipeLeft
+	 *
+	 * @description
+	 * Specify custom behavior when an element is swiped to the left on a touchscreen device.
+	 * A leftward swipe is a quick, right-to-left slide of the finger.
+	 * Though ngSwipeLeft is designed for touch-based devices, it will work with a mouse click and drag
+	 * too.
+	 *
+	 * Requires the {@link ngTouch `ngTouch`} module to be installed.
+	 *
+	 * @element ANY
+	 * @param {expression} ngSwipeLeft {@link guide/expression Expression} to evaluate
+	 * upon left swipe. (Event object is available as `$event`)
+	 *
+	 * @example
+	    <example>
+	      <file name="index.html">
+	        <div ng-show="!showActions" ng-swipe-left="showActions = true">
+	          Some list content, like an email in the inbox
+	        </div>
+	        <div ng-show="showActions" ng-swipe-right="showActions = false">
+	          <button ng-click="reply()">Reply</button>
+	          <button ng-click="delete()">Delete</button>
+	        </div>
+	      </file>
+	    </example>
+	 */
+
+	/**
+	 * @ngdoc directive
+	 * @name ngSwipeRight
+	 *
+	 * @description
+	 * Specify custom behavior when an element is swiped to the right on a touchscreen device.
+	 * A rightward swipe is a quick, left-to-right slide of the finger.
+	 * Though ngSwipeRight is designed for touch-based devices, it will work with a mouse click and drag
+	 * too.
+	 *
+	 * Requires the {@link ngTouch `ngTouch`} module to be installed.
+	 *
+	 * @element ANY
+	 * @param {expression} ngSwipeRight {@link guide/expression Expression} to evaluate
+	 * upon right swipe. (Event object is available as `$event`)
+	 *
+	 * @example
+	    <example>
+	      <file name="index.html">
+	        <div ng-show="!showActions" ng-swipe-left="showActions = true">
+	          Some list content, like an email in the inbox
+	        </div>
+	        <div ng-show="showActions" ng-swipe-right="showActions = false">
+	          <button ng-click="reply()">Reply</button>
+	          <button ng-click="delete()">Delete</button>
+	        </div>
+	      </file>
+	    </example>
+	 */
+
+	function makeSwipeDirective(directiveName, direction, eventName) {
+	  ngTouch.directive(directiveName, ['$parse', '$swipe', function($parse, $swipe) {
+	    // The maximum vertical delta for a swipe should be less than 75px.
+	    var MAX_VERTICAL_DISTANCE = 75;
+	    // Vertical distance should not be more than a fraction of the horizontal distance.
+	    var MAX_VERTICAL_RATIO = 0.3;
+	    // At least a 30px lateral motion is necessary for a swipe.
+	    var MIN_HORIZONTAL_DISTANCE = 30;
+
+	    return function(scope, element, attr) {
+	      var swipeHandler = $parse(attr[directiveName]);
+
+	      var startCoords, valid;
+
+	      function validSwipe(coords) {
+	        // Check that it's within the coordinates.
+	        // Absolute vertical distance must be within tolerances.
+	        // Horizontal distance, we take the current X - the starting X.
+	        // This is negative for leftward swipes and positive for rightward swipes.
+	        // After multiplying by the direction (-1 for left, +1 for right), legal swipes
+	        // (ie. same direction as the directive wants) will have a positive delta and
+	        // illegal ones a negative delta.
+	        // Therefore this delta must be positive, and larger than the minimum.
+	        if (!startCoords) return false;
+	        var deltaY = Math.abs(coords.y - startCoords.y);
+	        var deltaX = (coords.x - startCoords.x) * direction;
+	        return valid && // Short circuit for already-invalidated swipes.
+	            deltaY < MAX_VERTICAL_DISTANCE &&
+	            deltaX > 0 &&
+	            deltaX > MIN_HORIZONTAL_DISTANCE &&
+	            deltaY / deltaX < MAX_VERTICAL_RATIO;
+	      }
+
+	      $swipe.bind(element, {
+	        'start': function(coords, event) {
+	          startCoords = coords;
+	          valid = true;
+	        },
+	        'cancel': function(event) {
+	          valid = false;
+	        },
+	        'end': function(coords, event) {
+	          if (validSwipe(coords)) {
+	            scope.$apply(function() {
+	              element.triggerHandler(eventName);
+	              swipeHandler(scope, {$event: event});
+	            });
+	          }
+	        }
+	      });
+	    };
+	  }]);
+	}
+
+	// Left is negative X-coordinate, right is positive.
+	makeSwipeDirective('ngSwipeLeft', -1, 'swipeleft');
+	makeSwipeDirective('ngSwipeRight', 1, 'swiperight');
+
+
+
+	})(window, window.angular);
+
+
+/***/ },
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var require;/**
@@ -26877,7 +27410,7 @@
 	!angular.$$csp() && angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide{display:none !important;}ng\\:form{display:block;}.ng-animate-block-transitions{transition:0s all!important;-webkit-transition:0s all!important;}</style>');
 
 /***/ },
-/* 20 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(22);
@@ -27069,541 +27602,6 @@
 	      originalOnRemove.call(this, map);
 	    }
 	  });
-	})();
-
-
-/***/ },
-/* 21 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Angular Carousel - Mobile friendly touch carousel for AngularJS
-	 * @version v0.2.2 - 2014-04-02
-	 * @link http://revolunet.github.com/angular-carousel
-	 * @author Julien Bouquillon <julien@revolunet.com>
-	 * @license MIT License, http://www.opensource.org/licenses/MIT
-	 */
-	/*global angular */
-
-	/*
-	Angular touch carousel with CSS GPU accel and slide buffering
-	http://github.com/revolunet/angular-carousel
-
-	*/
-
-	angular.module('angular-carousel', [
-	    'ngTouch'
-	]);
-
-	angular.module('angular-carousel')
-
-	.directive('rnCarouselControls', [function() {
-	  return {
-	    restrict: 'A',
-	    replace: true,
-	    scope: {
-	      items: '=',
-	      index: '='
-	    },
-	    link: function(scope, element, attrs) {
-	      scope.prev = function() {
-	        scope.index--;
-	      };
-	      scope.next = function() {
-	        scope.index++;
-	      };
-	    },
-	    template: '<div class="rn-carousel-controls">' +
-	                '<span class="rn-carousel-control rn-carousel-control-prev" ng-click="prev()" ng-if="index > 0"></span>' +
-	                '<span class="rn-carousel-control rn-carousel-control-next" ng-click="next()" ng-if="index < items.length - 1"></span>' +
-	              '</div>'
-	  };
-	}]);
-
-	angular.module('angular-carousel')
-
-	.directive('rnCarouselIndicators', [function() {
-	  return {
-	    restrict: 'A',
-	    replace: true,
-	    scope: {
-	      items: '=',
-	      index: '='
-	    },
-	    template: '<div class="rn-carousel-indicator">' +
-	                '<span ng-repeat="item in items" ng-click="$parent.index=$index" ng-class="{active: $index==$parent.index}"></span>' +
-	              '</div>'
-	  };
-	}]);
-
-	(function() {
-	    "use strict";
-
-	    angular.module('angular-carousel')
-
-	    .directive('rnCarousel', ['$swipe', '$window', '$document', '$parse', '$compile', '$rootScope', function($swipe, $window, $document, $parse, $compile, $rootScope) {
-	        // internal ids to allow multiple instances
-	        var carouselId = 0,
-	            // used to compute the sliding speed
-	            timeConstant = 75,
-	            // in container % how much we need to drag to trigger the slide change
-	            moveTreshold = 0.05,
-	            // in absolute pixels, at which distance the slide stick to the edge on release
-	            rubberTreshold = 3;
-
-	        var requestAnimationFrame = $window.requestAnimationFrame || $window.webkitRequestAnimationFrame || $window.mozRequestAnimationFrame;
-
-	        return {
-	            restrict: 'A',
-	            scope: true,
-	            compile: function(tElement, tAttributes) {
-	                // use the compile phase to customize the DOM
-	                var firstChildAttributes = tElement.children()[0].attributes,
-	                    isRepeatBased = false,
-	                    isBuffered = false,
-	                    slidesCount = 0,
-	                    isIndexBound = false,
-	                    repeatItem,
-	                    repeatCollection;
-
-	                // add CSS classes
-	                tElement.addClass('rn-carousel-slides');
-	                tElement.children().addClass('rn-carousel-slide');
-
-	                // try to find an ngRepeat expression
-	                // at this point, the attributes are not yet normalized so we need to try various syntax
-	                ['ng-repeat', 'data-ng-repeat', 'x-ng-repeat'].every(function(attr) {
-	                    var repeatAttribute = firstChildAttributes[attr];
-	                    if (angular.isDefined(repeatAttribute)) {
-	                        // ngRepeat regexp extracted from angular 1.2.7 src
-	                        var exprMatch = repeatAttribute.value.match(/^\s*([\s\S]+?)\s+in\s+([\s\S]+?)(?:\s+track\s+by\s+([\s\S]+?))?\s*$/),
-	                            trackProperty = exprMatch[3];
-
-	                        repeatItem = exprMatch[1];
-	                        repeatCollection = exprMatch[2];
-
-	                        if (repeatItem) {
-	                            if (angular.isDefined(tAttributes['rnCarouselBuffered'])) {
-	                                // update the current ngRepeat expression and add a slice operator if buffered
-	                                isBuffered = true;
-	                                repeatAttribute.value = repeatItem + ' in ' + repeatCollection + '|carouselSlice:carouselBufferIndex:carouselBufferSize';
-	                                if (trackProperty) {
-	                                    repeatAttribute.value += ' track by ' + trackProperty;
-	                                }
-	                            }
-	                            isRepeatBased = true;
-	                            return false;
-	                        }
-	                    }
-	                    return true;
-	                });
-
-	                return function(scope, iElement, iAttributes, containerCtrl) {
-
-	                    carouselId++;
-
-	                    var containerWidth,
-	                        transformProperty,
-	                        pressed,
-	                        startX,
-	                        amplitude,
-	                        offset = 0,
-	                        destination,
-	                        slidesCount = 0,
-	                        swipeMoved = false,
-	                        // javascript based animation easing
-	                        timestamp;
-
-	                    // add a wrapper div that will hide the overflow
-	                    var carousel = iElement.wrap("<div id='carousel-" + carouselId +"' class='rn-carousel-container'></div>"),
-	                        container = carousel.parent();
-
-	                    // if indicator or controls, setup the watch
-	                    if (angular.isDefined(iAttributes.rnCarouselIndicator) || angular.isDefined(iAttributes.rnCarouselControl)) {
-	                        updateIndicatorArray();
-	                        scope.$watch('carouselIndex', function(newValue) {
-	                            scope.indicatorIndex = newValue;
-	                        });
-	                        scope.$watch('indicatorIndex', function(newValue) {
-	                            goToSlide(newValue, true);
-	                        });
-
-	                    }
-
-	                    // enable carousel indicator
-	                    if (angular.isDefined(iAttributes.rnCarouselIndicator)) {
-	                        var indicator = $compile("<div id='carousel-" + carouselId +"-indicator' index='indicatorIndex' items='carouselIndicatorArray' rn-carousel-indicators class='rn-carousel-indicator'></div>")(scope);
-	                        container.append(indicator);
-	                    }
-
-	                    // enable carousel controls
-	                    if (angular.isDefined(iAttributes.rnCarouselControl)) {
-	                        var controls = $compile("<div id='carousel-" + carouselId +"-controls' index='indicatorIndex' items='carouselIndicatorArray' rn-carousel-controls class='rn-carousel-controls'></div>")(scope);
-	                        container.append(controls);
-	                    }
-
-	                    scope.carouselBufferIndex = 0;
-	                    scope.carouselBufferSize = 5;
-	                    scope.carouselIndex = 0;
-
-	                    // handle index databinding
-	                    if (iAttributes.rnCarouselIndex) {
-	                        var updateParentIndex = function(value) {
-	                            indexModel.assign(scope.$parent, value);
-	                        };
-	                        var indexModel = $parse(iAttributes.rnCarouselIndex);
-	                        if (angular.isFunction(indexModel.assign)) {
-	                            /* check if this property is assignable then watch it */
-	                            scope.$watch('carouselIndex', function(newValue) {
-	                                updateParentIndex(newValue);
-	                            });
-	                            scope.carouselIndex = indexModel(scope);
-	                            scope.$parent.$watch(indexModel, function(newValue, oldValue) {
-	                                if (newValue!==undefined) {
-	                                    if (newValue >= slidesCount) {
-	                                        newValue = slidesCount - 1;
-	                                        updateParentIndex(newValue);
-	                                    } else if (newValue < 0) {
-	                                        newValue = 0;
-	                                        updateParentIndex(newValue);
-	                                    }
-	                                    goToSlide(newValue, true);
-	                                }
-	                            });
-	                            isIndexBound = true;
-	                        } else if (!isNaN(iAttributes.rnCarouselIndex)) {
-	                          /* if user just set an initial number, set it */
-	                          scope.carouselIndex = parseInt(iAttributes.rnCarouselIndex, 10);
-	                        }
-	                    }
-
-	                    // watch the given collection
-	                    if (isRepeatBased) {
-	                        scope.$watchCollection(repeatCollection, function(newValue, oldValue) {
-	                            slidesCount = 0;
-	                            if (angular.isArray(newValue)) {
-	                                slidesCount = newValue.length;
-	                            } else if (angular.isObject(newValue)) {
-	                                slidesCount = Object.keys(newValue).length;
-	                            }
-	                            updateIndicatorArray();
-	                            if (!containerWidth) updateContainerWidth();
-	                            goToSlide(scope.carouselIndex);
-	                        });
-	                    } else {
-	                        slidesCount = iElement.children().length;
-	                        updateIndicatorArray();
-	                        updateContainerWidth();
-	                    }
-
-	                    function updateIndicatorArray() {
-	                        // generate an array to be used by the indicators
-	                        var items = [];
-	                        for (var i = 0; i < slidesCount; i++) items[i] = i;
-	                        scope.carouselIndicatorArray = items;
-	                    }
-
-	                    function getCarouselWidth() {
-	                       // container.css('width', 'auto');
-	                        var slides = carousel.children();
-	                        if (slides.length === 0) {
-	                            containerWidth = carousel[0].getBoundingClientRect().width;
-	                        } else {
-	                            containerWidth = slides[0].getBoundingClientRect().width;
-	                        }
-	                        // console.log('getCarouselWidth', containerWidth);
-	                        return containerWidth;
-	                    }
-
-	                    function updateContainerWidth() {
-	                        // force the carousel container width to match the first slide width
-	                        container.css('width', '100%');
-	                        var width = getCarouselWidth();
-	                        if (width) {
-	                            container.css('width', width + 'px');
-	                        }
-	                    }
-
-	                    function scroll(x) {
-	                        // use CSS 3D transform to move the carousel
-	                        if (isNaN(x)) {
-	                            x = scope.carouselIndex * containerWidth;
-	                        }
-
-	                        offset = x;
-	                        var move = -Math.round(offset);
-	                        move += (scope.carouselBufferIndex * containerWidth);
-
-	                        if(!is3dAvailable) {
-	                            carousel[0].style[transformProperty] = 'translate(' + move + 'px, 0)';
-	                        } else {
-	                            carousel[0].style[transformProperty] = 'translate3d(' + move + 'px, 0, 0)';
-	                        }
-	                    }
-
-	                    function autoScroll() {
-	                        // scroll smoothly to "destination" until we reach it
-	                        // using requestAnimationFrame
-	                        var elapsed, delta;
-
-	                        if (amplitude) {
-	                            elapsed = Date.now() - timestamp;
-	                            delta = amplitude * Math.exp(-elapsed / timeConstant);
-	                            if (delta > rubberTreshold || delta < -rubberTreshold) {
-	                                scroll(destination - delta);
-	                                /* We are using raf.js, a requestAnimationFrame polyfill, so
-	                                this will work on IE9 */
-	                                requestAnimationFrame(autoScroll);
-	                            } else {
-	                                goToSlide(destination / containerWidth);
-	                            }
-	                        }
-	                    }
-
-	                    function capIndex(idx) {
-	                        // ensure given index it inside bounds
-	                        return (idx >= slidesCount) ? slidesCount: (idx <= 0) ? 0 : idx;
-	                    }
-
-	                    function updateBufferIndex() {
-	                        // update and cap te buffer index
-	                        var bufferIndex = 0;
-	                        var bufferEdgeSize = (scope.carouselBufferSize - 1) / 2;
-	                        if (isBuffered) {
-	                            if (scope.carouselIndex <= bufferEdgeSize) {
-	                                bufferIndex = 0;
-	                            } else if (slidesCount < scope.carouselBufferSize) {
-	                                bufferIndex = 0;
-	                            } else if (scope.carouselIndex > slidesCount - scope.carouselBufferSize) {
-	                                bufferIndex = slidesCount - scope.carouselBufferSize;
-	                            } else {
-	                                bufferIndex = scope.carouselIndex - bufferEdgeSize;
-	                            }
-	                        }
-	                        scope.carouselBufferIndex = bufferIndex;
-	                    }
-
-	                    function goToSlide(i, animate) {
-	                        if (isNaN(i)) {
-	                            i = scope.carouselIndex;
-	                        }
-	                        if (animate) {
-	                            // simulate a swipe so we have the standard animation
-	                            // used when external binding index is updated or touch canceed
-	                            offset = (i * containerWidth);
-	                            swipeEnd(null, null, true);
-	                            return;
-	                        }
-	                        scope.carouselIndex = capIndex(i);
-	                        updateBufferIndex();
-	                        // if outside of angular scope, trigger angular digest cycle
-	                        // use local digest only for perfs if no index bound
-	                        if ($rootScope.$$phase!=='$apply' && $rootScope.$$phase!=='$digest') {
-	                            if (isIndexBound) {
-	                                scope.$apply();
-	                            } else {
-	                                scope.$digest();
-	                            }
-	                        }
-	                        scroll();
-	                    }
-
-	                    function getAbsMoveTreshold() {
-	                        // return min pixels required to move a slide
-	                        return moveTreshold * containerWidth;
-	                    }
-
-	                    function documentMouseUpEvent(event) {
-	                        // in case we click outside the carousel, trigger a fake swipeEnd
-	                        swipeMoved = true;
-	                        swipeEnd({
-	                            x: event.clientX,
-	                            y: event.clientY
-	                        }, event);
-	                    }
-
-	                    function capPosition(x) {
-	                        // limit position if start or end of slides
-	                        var position = x;
-	                        if (scope.carouselIndex===0) {
-	                            position = Math.max(-getAbsMoveTreshold(), position);
-	                        } else if (scope.carouselIndex===slidesCount-1) {
-	                            position = Math.min(((slidesCount-1)*containerWidth + getAbsMoveTreshold()), position);
-	                        }
-	                        return position;
-	                    }
-
-	                    function swipeStart(coords, event) {
-	                        //console.log('swipeStart', coords, event);
-	                        $document.bind('mouseup', documentMouseUpEvent);
-	                        pressed = true;
-	                        startX = coords.x;
-
-	                        amplitude = 0;
-	                        timestamp = Date.now();
-
-	                        return false;
-	                    }
-
-	                    function swipeMove(coords, event) {
-	                        //console.log('swipeMove', coords, event);
-	                        var x, delta;
-	                        if (pressed) {
-	                            x = coords.x;
-	                            delta = startX - x;
-	                            if (delta > 2 || delta < -2) {
-	                                swipeMoved = true;
-	                                startX = x;
-
-	                                /* We are using raf.js, a requestAnimationFrame polyfill, so
-	                                this will work on IE9 */
-	                                requestAnimationFrame(function() {
-	                                    scroll(capPosition(offset + delta));
-	                                });
-	                            }
-	                        }
-	                        return false;
-	                    }
-
-	                    function swipeEnd(coords, event, forceAnimation) {
-	                        //console.log('swipeEnd', 'scope.carouselIndex', scope.carouselIndex);
-
-	                        // Prevent clicks on buttons inside slider to trigger "swipeEnd" event on touchend/mouseup
-	                        if(event && !swipeMoved) {
-	                            return;
-	                        }
-
-	                        $document.unbind('mouseup', documentMouseUpEvent);
-	                        pressed = false;
-	                        swipeMoved = false;
-
-	                        destination = offset;
-
-	                        var minMove = getAbsMoveTreshold(),
-	                            currentOffset = (scope.carouselIndex * containerWidth),
-	                            absMove = currentOffset - destination,
-	                            slidesMove = -Math[absMove>=0?'ceil':'floor'](absMove / containerWidth),
-	                            shouldMove = Math.abs(absMove) > minMove;
-
-	                        if ((slidesMove + scope.carouselIndex) >= slidesCount ) {
-	                            slidesMove = slidesCount - 1 - scope.carouselIndex;
-	                        }
-	                        if ((slidesMove + scope.carouselIndex) < 0) {
-	                            slidesMove = -scope.carouselIndex;
-	                        }
-	                        var moveOffset = shouldMove?slidesMove:0;
-
-	                        destination = (moveOffset + scope.carouselIndex) * containerWidth;
-	                        amplitude = destination - offset;
-	                        timestamp = Date.now();
-	                        if (forceAnimation) {
-	                            amplitude = offset - currentOffset;
-	                        }
-	                        /* We are using raf.js, a requestAnimationFrame polyfill, so
-	                        this will work on IE9 */
-	                        requestAnimationFrame(autoScroll);
-
-	                        return false;
-	                    }
-
-	                    iAttributes.$observe('rnCarouselSwipe', function(newValue, oldValue) {
-	                        // only bind swipe when it's not switched off
-	                        if(newValue !== 'false' && newValue !== 'off') {
-	                            $swipe.bind(carousel, {
-	                                start: swipeStart,
-	                                move: swipeMove,
-	                                end: swipeEnd,
-	                                cancel: function(event) {
-	                                  swipeEnd({}, event);
-	                                }
-	                            });
-	                        } else {
-	                            // unbind swipe when it's switched off
-	                            carousel.unbind();
-	                        }
-	                    });
-
-	                    // initialise first slide only if no binding
-	                    // if so, the binding will trigger the first init
-	                    if (!isIndexBound) {
-	                        goToSlide(scope.carouselIndex);
-	                    }
-
-	                    // detect supported CSS property
-	                    transformProperty = 'transform';
-	                    ['webkit', 'Moz', 'O', 'ms'].every(function (prefix) {
-	                        var e = prefix + 'Transform';
-	                        if (typeof document.body.style[e] !== 'undefined') {
-	                            transformProperty = e;
-	                            return false;
-	                        }
-	                        return true;
-	                    });
-
-	                    //Detect support of translate3d
-	                    function detect3dSupport(){
-	                        var el = document.createElement('p'),
-	                        has3d,
-	                        transforms = {
-	                            'webkitTransform':'-webkit-transform',
-	                            'OTransform':'-o-transform',
-	                            'msTransform':'-ms-transform',
-	                            'MozTransform':'-moz-transform',
-	                            'transform':'transform'
-	                        };
-	                        // Add it to the body to get the computed style
-	                        document.body.insertBefore(el, null);
-	                        for(var t in transforms){
-	                            if( el.style[t] !== undefined ){
-	                                el.style[t] = 'translate3d(1px,1px,1px)';
-	                                has3d = window.getComputedStyle(el).getPropertyValue(transforms[t]);
-	                            }
-	                        }
-	                        document.body.removeChild(el);
-	                        return (has3d !== undefined && has3d.length > 0 && has3d !== "none");
-	                    }
-
-	                    var is3dAvailable = detect3dSupport();
-
-	                    function onOrientationChange() {
-	                        updateContainerWidth();
-	                        goToSlide();
-	                    }
-
-	                    // handle orientation change
-	                    var winEl = angular.element($window);
-	                    winEl.bind('orientationchange', onOrientationChange);
-	                    winEl.bind('resize', onOrientationChange);
-
-	                    scope.$on('$destroy', function() {
-	                        $document.unbind('mouseup', documentMouseUpEvent);
-	                        winEl.unbind('orientationchange', onOrientationChange);
-	                        winEl.unbind('resize', onOrientationChange);
-	                    });
-
-	                };
-	            }
-	        };
-	    }]);
-
-	})();
-
-	(function() {
-	    "use strict";
-
-	    angular.module('angular-carousel')
-
-	    .filter('carouselSlice', function() {
-	        return function(collection, start, size) {
-	            if (angular.isArray(collection)) {
-	                return collection.slice(start, start + size);
-	            } else if (angular.isObject(collection)) {
-	                // dont try to slice collections :)
-	                return collection;
-	            }
-	        };
-	    });
-
 	})();
 
 
@@ -37149,6 +37147,50 @@
 /* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
+	// haversine
+	// By Nick Justice (niix)
+	// https://github.com/niix/haversine
+
+	var haversine = (function() {
+
+	  // convert to radians
+	  var toRad = function(num) {
+	    return num * Math.PI / 180
+	  }
+
+	  return function haversine(start, end, options) {
+	    var miles = 3960
+	    var km    = 6371
+	    options   = options || {}
+
+	    var R = options.unit === 'km' ? km : miles
+
+	    var dLat = toRad(end.latitude - start.latitude)
+	    var dLon = toRad(end.longitude - start.longitude)
+	    var lat1 = toRad(start.latitude)
+	    var lat2 = toRad(end.latitude)
+
+	    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+	            Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2)
+	    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+
+	    if (options.threshold) {
+	      return options.threshold > (R * c)
+	    } else {
+	      return R * c
+	    }     
+	  }
+
+	})()
+
+	module.exports = haversine
+
+/***/ },
+/* 25 */,
+/* 26 */,
+/* 27 */
+/***/ function(module, exports, __webpack_require__) {
+
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.6.0
 	//     http://underscorejs.org
 	//     (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -38493,50 +38535,6 @@
 	  }
 	}).call(this);
 
-
-/***/ },
-/* 25 */,
-/* 26 */,
-/* 27 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// haversine
-	// By Nick Justice (niix)
-	// https://github.com/niix/haversine
-
-	var haversine = (function() {
-
-	  // convert to radians
-	  var toRad = function(num) {
-	    return num * Math.PI / 180
-	  }
-
-	  return function haversine(start, end, options) {
-	    var miles = 3960
-	    var km    = 6371
-	    options   = options || {}
-
-	    var R = options.unit === 'km' ? km : miles
-
-	    var dLat = toRad(end.latitude - start.latitude)
-	    var dLon = toRad(end.longitude - start.longitude)
-	    var lat1 = toRad(start.latitude)
-	    var lat2 = toRad(end.latitude)
-
-	    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-	            Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2)
-	    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-
-	    if (options.threshold) {
-	      return options.threshold > (R * c)
-	    } else {
-	      return R * c
-	    }     
-	  }
-
-	})()
-
-	module.exports = haversine
 
 /***/ }
 /******/ ])
