@@ -1,6 +1,6 @@
 {
   "name": "vegan-society",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Web App to grow the Vegan community",
   "main": "app.js",
   "scripts": {
