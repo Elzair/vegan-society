@@ -177,6 +177,7 @@ mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
                 , icon: icon
                 , draggable: false
                 , message: template(ent)
+                , bounceOnAdd: true
               };
             }
           });
