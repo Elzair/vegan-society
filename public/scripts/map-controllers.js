@@ -103,7 +103,7 @@ console.log(leafletEvents.getAvailableMapEvents());
       });
 
       function find_nearby_locations(lat, lng) {
-        // Find locations/events around user's location
+        // Find locations/events around specified location
         Entries.search({lat: lat, lng: lng}).$promise.then(function(entries) {
           entries.forEach(function(ent, index, array) {
             // Avoid adding the same location twice
@@ -124,13 +124,13 @@ console.log(leafletEvents.getAvailableMapEvents());
 
               // Calculate distance from user's location
               ent.unit = (ent.country === 'USA') ? 'miles' : 'km';
+
               ent.distance = haversine(
                   {latitude: $scope.user_location.lat, longitude: $scope.user_location.lng}
-                , {latitude: lat, longitude: lng}
+                , {latitude: ent.location.coordinates[1], longitude: ent.location.coordinates[0]}
                 , {unit: ent.unit}
               ).toFixed(2);
 
-              //var coords = L.latLng(loc.location.coordinates[1], loc.location.coordinates[0]);
               var icon = null;
               switch(ent.categories[0]) {
                 case 'Restaurant':

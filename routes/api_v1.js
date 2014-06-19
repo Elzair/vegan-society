@@ -45,8 +45,8 @@ exports.search = function *() {
     // Return first image as thumbnail, if available
     if (ents[i].images && ents[i].images.length > 0 && ents[i].images[0].id !== undefined) {
       new_entry.thumbnails = [
-          imghost.url(ents[i].images[0].id, {width: 160, height: 100, crop: 'fill'})
-        , imghost.url(ents[i].images[0].id, {width: 320, height: 200, crop: 'fill'})
+          imghost.url(ents[i].images[0].id, {secure: true, width: 160, height: 100, crop: 'fill'})
+        , imghost.url(ents[i].images[0].id, {secure: true, width: 320, height: 200, crop: 'fill'})
       ];
       new_entry.caption = ents[i].images[0].caption || '';
     }
@@ -72,7 +72,7 @@ exports.entry = function *(name) {
 
   // Add imghost url to all images
   for (var i=0; i<entry.images.length; i++) {
-    entry.images[i].url = imghost.url(entry.images[i].id, {width: 400, height: 400, crop: 'fill'});
+    entry.images[i].url = imghost.url(entry.images[i].id, {secure: true, width: 400, height: 400, crop: 'fill'});
   }
 
   // Set response headers
