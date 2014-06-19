@@ -42,7 +42,6 @@
     "haversine": "0.0.4",
     "angular-slide-menu": "~0.4.3",
     "cloudinary": "~1.0.9",
-    "gulp": "~3.5.6",
     "webpack": "~1.1.10",
     "angular-module-touch": "~1.2.16",
     "angular-module-resource": "~1.2.16",
