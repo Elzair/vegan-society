@@ -1,6 +1,6 @@
 {
   "name": "vegan-society",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Web App to grow the Vegan community",
   "main": "app.js",
   "scripts": {
@@ -36,7 +36,6 @@
     "co-monk": "~1.0.0",
     "monk": "~0.8.1",
     "co-fs": "~1.2.0",
-    "angular-leaflet-directive": "~0.7.6",
     "leaflet": "~0.7.2",
     "underscore": "~1.6.0",
     "haversine": "0.0.4",
@@ -52,7 +51,8 @@
     "passport-facebook": "~1.0.3",
     "passport-google": "~0.3.0",
     "koa-oauth-server": "0.0.4",
-    "koa-force-ssl": "0.0.3"
+    "koa-force-ssl": "0.0.3",
+    "angular-leaflet-directive": "~0.7.6"
   },
   "devDependencies": {
     "gulp": "~3.5.6",

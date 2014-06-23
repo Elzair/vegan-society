@@ -2,7 +2,6 @@ var angularCore      = require('angular-module-core')
   , angularResource  = require('angular-module-resource')
   , angularRoute     = require('angular-module-route')
   , angularTouch     = require('angular-module-touch')
-  , directives       = require('./directives')
   , entryControllers = require('./entry-controllers')
   , filters          = require('./filters')
   , interpolate      = require('./interpolate')
@@ -13,7 +12,6 @@ var angularCore      = require('angular-module-core')
 
 var mapApp = angular.module('mapApp', [
     'ngRoute'
-  , 'directives'
   , 'entryControllers'
   , 'filters'
   , 'interpolate'

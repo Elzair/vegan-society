@@ -78,9 +78,11 @@
 	          tiles: '=tiles',
 	          layers: '=layers',
 	          controls: '=controls',
+	          decorations: '=decorations',
 	          eventBroadcast: '=eventBroadcast'
 	        },
-	        template: '<div class="angular-leaflet-map"></div>',
+	        transclude: true,
+	        template: '<div class="angular-leaflet-map"><div ng-transclude></div></div>',
 	        controller: [
 	          '$scope',
 	          function ($scope) {
@@ -160,22 +162,12 @@
 	    '$location',
 	    'leafletMapDefaults',
 	    'leafletHelpers',
-	    function ($log, $q, $location, leafletMapDefaults, leafletHelpers) {
-	      var isDefined = leafletHelpers.isDefined, isNumber = leafletHelpers.isNumber, isSameCenterOnMap = leafletHelpers.isSameCenterOnMap, safeApply = leafletHelpers.safeApply, isValidCenter = leafletHelpers.isValidCenter;
-	      var notifyCenterChangedToBounds = function (scope) {
-	        scope.$broadcast('boundsChanged');
-	      };
-	      var notifyCenterUrlHashChanged = function (scope, map, attrs) {
-	        if (!isDefined(attrs.urlHashCenter)) {
-	          return;
-	        }
-	        var center = map.getCenter();
-	        var centerUrlHash = center.lat.toFixed(4) + ':' + center.lng.toFixed(4) + ':' + map.getZoom();
-	        var search = $location.search();
-	        if (!isDefined(search.c) || search.c !== centerUrlHash) {
-	          //$log.debug("notified new center...");
-	          scope.$emit('centerUrlHash', centerUrlHash);
-	        }
+	    'leafletBoundsHelpers',
+	    'leafletEvents',
+	    function ($log, $q, $location, leafletMapDefaults, leafletHelpers, leafletBoundsHelpers, leafletEvents) {
+	      var isDefined = leafletHelpers.isDefined, isNumber = leafletHelpers.isNumber, isSameCenterOnMap = leafletHelpers.isSameCenterOnMap, safeApply = leafletHelpers.safeApply, isValidCenter = leafletHelpers.isValidCenter, isEmpty = leafletHelpers.isEmpty, isUndefinedOrEmpty = leafletHelpers.isUndefinedOrEmpty;
+	      var shouldInitializeMapWithBounds = function (bounds, center) {
+	        return isDefined(bounds) && !isEmpty(bounds) && isUndefinedOrEmpty(center);
 	      };
 	      var _leafletCenter;
 	      return {
@@ -200,6 +192,31 @@
 	                defaults.center.lng
 	              ], defaults.center.zoom);
 	              return;
+	            } else if (shouldInitializeMapWithBounds(leafletScope.bounds, centerModel)) {
+	              map.fitBounds(leafletBoundsHelpers.createLeafletBounds(leafletScope.bounds));
+	              centerModel = map.getCenter();
+	              safeApply(leafletScope, function (scope) {
+	                scope.center = {
+	                  lat: map.getCenter().lat,
+	                  lng: map.getCenter().lng,
+	                  zoom: map.getZoom(),
+	                  autoDiscover: false
+	                };
+	              });
+	              safeApply(leafletScope, function (scope) {
+	                var mapBounds = map.getBounds();
+	                var newScopeBounds = {
+	                    northEast: {
+	                      lat: mapBounds._northEast.lat,
+	                      lng: mapBounds._northEast.lng
+	                    },
+	                    southWest: {
+	                      lat: mapBounds._southWest.lat,
+	                      lng: mapBounds._southWest.lng
+	                    }
+	                  };
+	                scope.bounds = newScopeBounds;
+	              });
 	            } else if (!isDefined(centerModel)) {
 	              $log.error('The "center" property is not defined in the main scope');
 	              map.setView([
@@ -285,7 +302,7 @@
 	                center.lat,
 	                center.lng
 	              ], center.zoom);
-	              notifyCenterChangedToBounds(leafletScope, map);
+	              leafletEvents.notifyCenterChangedToBounds(leafletScope, map);
 	            }, true);
 	            map.whenReady(function () {
 	              mapReady = true;
@@ -293,7 +310,7 @@
 	            map.on('moveend', function () {
 	              // Resolve the center after the first map position
 	              _leafletCenter.resolve();
-	              notifyCenterUrlHashChanged(leafletScope, map, attrs);
+	              leafletEvents.notifyCenterUrlHashChanged(leafletScope, map, attrs, $location.search());
 	              //$log.debug("updated center on map...");
 	              if (isSameCenterOnMap(centerModel, map)) {
 	                //$log.debug("same center in model, no need to update again.");
@@ -307,7 +324,7 @@
 	                  zoom: map.getZoom(),
 	                  autoDiscover: false
 	                };
-	                notifyCenterChangedToBounds(leafletScope, map);
+	                leafletEvents.notifyCenterChangedToBounds(leafletScope, map);
 	              });
 	            });
 	            if (centerModel.autoDiscover === true) {
@@ -318,13 +335,13 @@
 	                    centerModel.lat,
 	                    centerModel.lng
 	                  ], centerModel.zoom);
-	                  notifyCenterChangedToBounds(leafletScope, map);
+	                  leafletEvents.notifyCenterChangedToBounds(leafletScope, map);
 	                } else {
 	                  map.setView([
 	                    defaults.center.lat,
 	                    defaults.center.lng
 	                  ], defaults.center.zoom);
-	                  notifyCenterChangedToBounds(leafletScope, map);
+	                  leafletEvents.notifyCenterChangedToBounds(leafletScope, map);
 	                }
 	              });
 	            }
@@ -412,16 +429,18 @@
 	          var position = legend.position || 'bottomright';
 	          var leafletLegend;
 	          controller.getMap().then(function (map) {
-	            if (!isDefined(legend.url) && (!isArray(legend.colors) || !isArray(legend.labels) || legend.colors.length !== legend.labels.length)) {
-	              $log.warn('[AngularJS - Leaflet] legend.colors and legend.labels must be set.');
-	            } else if (isDefined(legend.url)) {
-	              $log.info('[AngularJS - Leaflet] loading arcgis legend service.');
-	            } else {
-	              // TODO: Watch array legend.
-	              leafletLegend = L.control({ position: position });
-	              leafletLegend.onAdd = leafletLegendHelpers.getOnAddArrayLegend(legend, legendClass);
-	              leafletLegend.addTo(map);
-	            }
+	            leafletScope.$watch('legend', function (legend) {
+	              if (!isDefined(legend.url) && (!isArray(legend.colors) || !isArray(legend.labels) || legend.colors.length !== legend.labels.length)) {
+	                $log.warn('[AngularJS - Leaflet] legend.colors and legend.labels must be set.');
+	              } else if (isDefined(legend.url)) {
+	                $log.info('[AngularJS - Leaflet] loading arcgis legend service.');
+	              } else {
+	                // TODO: Watch array legend.
+	                leafletLegend = L.control({ position: position });
+	                leafletLegend.onAdd = leafletLegendHelpers.getOnAddArrayLegend(legend, legendClass);
+	                leafletLegend.addTo(map);
+	              }
+	            });
 	            leafletScope.$watch('legend.url', function (newURL) {
 	              if (!isDefined(newURL)) {
 	                return;
@@ -500,7 +519,9 @@
 	              }
 	              geojson.options = {
 	                style: geojson.style,
-	                onEachFeature: onEachFeature
+	                filter: geojson.filter,
+	                onEachFeature: onEachFeature,
+	                pointToLayer: geojson.pointToLayer
 	              };
 	              leafletGeoJSON = L.geoJson(geojson.data, geojson.options);
 	              leafletData.setGeoJSON(leafletGeoJSON);
@@ -678,7 +699,7 @@
 	          'center'
 	        ],
 	        link: function (scope, element, attrs, controller) {
-	          var isDefined = leafletHelpers.isDefined, createLeafletBounds = leafletBoundsHelpers.createLeafletBounds, leafletScope = controller[0].getLeafletScope(), mapController = controller[0], centerController = controller[1];
+	          var isDefined = leafletHelpers.isDefined, createLeafletBounds = leafletBoundsHelpers.createLeafletBounds, leafletScope = controller[0].getLeafletScope(), mapController = controller[0];
 	          var emptyBounds = function (bounds) {
 	            if (bounds._southWest.lat === 0 && bounds._southWest.lng === 0 && bounds._northEast.lat === 0 && bounds._northEast.lng === 0) {
 	              return true;
@@ -686,44 +707,40 @@
 	            return false;
 	          };
 	          mapController.getMap().then(function (map) {
-	            map.whenReady(function () {
-	              centerController.getCenter().then(function () {
-	                leafletScope.$on('boundsChanged', function (event) {
-	                  var scope = event.currentScope;
-	                  var bounds = map.getBounds();
-	                  $log.debug('updated map bounds...', bounds);
-	                  if (emptyBounds(bounds)) {
-	                    return;
+	            leafletScope.$on('boundsChanged', function (event) {
+	              var scope = event.currentScope;
+	              var bounds = map.getBounds();
+	              //$log.debug('updated map bounds...', bounds);
+	              if (emptyBounds(bounds)) {
+	                return;
+	              }
+	              var newScopeBounds = {
+	                  northEast: {
+	                    lat: bounds._northEast.lat,
+	                    lng: bounds._northEast.lng
+	                  },
+	                  southWest: {
+	                    lat: bounds._southWest.lat,
+	                    lng: bounds._southWest.lng
 	                  }
-	                  var newScopeBounds = {
-	                      northEast: {
-	                        lat: bounds._northEast.lat,
-	                        lng: bounds._northEast.lng
-	                      },
-	                      southWest: {
-	                        lat: bounds._southWest.lat,
-	                        lng: bounds._southWest.lng
-	                      }
-	                    };
-	                  if (!angular.equals(scope.bounds, newScopeBounds)) {
-	                    $log.debug('Need to update scope bounds.');
-	                    scope.bounds = newScopeBounds;
-	                  }
-	                });
-	                leafletScope.$watch('bounds', function (bounds) {
-	                  $log.debug('updated bounds...', bounds);
-	                  if (!isDefined(bounds)) {
-	                    $log.error('[AngularJS - Leaflet] Invalid bounds');
-	                    return;
-	                  }
-	                  var leafletBounds = createLeafletBounds(bounds);
-	                  if (leafletBounds && !map.getBounds().equals(leafletBounds)) {
-	                    $log.debug('Need to update map bounds.');
-	                    map.fitBounds(leafletBounds);
-	                  }
-	                }, true);
-	              });
+	                };
+	              if (!angular.equals(scope.bounds, newScopeBounds)) {
+	                //$log.debug('Need to update scope bounds.');
+	                scope.bounds = newScopeBounds;
+	              }
 	            });
+	            leafletScope.$watch('bounds', function (bounds) {
+	              //$log.debug('updated bounds...', bounds);
+	              if (!isDefined(bounds)) {
+	                $log.error('[AngularJS - Leaflet] Invalid bounds');
+	                return;
+	              }
+	              var leafletBounds = createLeafletBounds(bounds);
+	              if (leafletBounds && !map.getBounds().equals(leafletBounds)) {
+	                //$log.debug('Need to update map bounds.');
+	                map.fitBounds(leafletBounds);
+	              }
+	            }, true);
 	          });
 	        }
 	      };
@@ -748,7 +765,7 @@
 	          '?layers'
 	        ],
 	        link: function (scope, element, attrs, controller) {
-	          var mapController = controller[0], Helpers = leafletHelpers, isDefined = leafletHelpers.isDefined, isString = leafletHelpers.isString, leafletScope = mapController.getLeafletScope(), markers = leafletScope.markers, deleteMarker = leafletMarkersHelpers.deleteMarker, addMarkerWatcher = leafletMarkersHelpers.addMarkerWatcher, listenMarkerEvents = leafletMarkersHelpers.listenMarkerEvents, addMarkerToGroup = leafletMarkersHelpers.addMarkerToGroup, bindMarkerEvents = leafletEvents.bindMarkerEvents, createMarker = leafletMarkersHelpers.createMarker;
+	          var mapController = controller[0], Helpers = leafletHelpers, isDefined = leafletHelpers.isDefined, isString = leafletHelpers.isString, leafletScope = mapController.getLeafletScope(), deleteMarker = leafletMarkersHelpers.deleteMarker, addMarkerWatcher = leafletMarkersHelpers.addMarkerWatcher, listenMarkerEvents = leafletMarkersHelpers.listenMarkerEvents, addMarkerToGroup = leafletMarkersHelpers.addMarkerToGroup, bindMarkerEvents = leafletEvents.bindMarkerEvents, createMarker = leafletMarkersHelpers.createMarker;
 	          mapController.getMap().then(function (map) {
 	            var leafletMarkers = {}, getLayers;
 	            // If the layers attribute is used, we must wait until the layers are created
@@ -760,9 +777,6 @@
 	                deferred.resolve();
 	                return deferred.promise;
 	              };
-	            }
-	            if (!isDefined(markers)) {
-	              return;
 	            }
 	            getLayers().then(function (layers) {
 	              leafletData.setMarkers(leafletMarkers, attrs.id);
@@ -815,8 +829,8 @@
 	                        continue;
 	                      }
 	                      var layerGroup = layers.overlays[markerData.layer];
-	                      if (!(layerGroup instanceof L.LayerGroup)) {
-	                        $log.error('[AngularJS - Leaflet] Adding a marker to an overlay needs a overlay of the type "group"');
+	                      if (!(layerGroup instanceof L.LayerGroup || layerGroup instanceof L.FeatureGroup)) {
+	                        $log.error('[AngularJS - Leaflet] Adding a marker to an overlay needs a overlay of the type "group" or "featureGroup"');
 	                        continue;
 	                      }
 	                      // The marker goes to a correct layer group, so first of all we add it
@@ -854,70 +868,113 @@
 	  ]);
 	  angular.module('leaflet-directive').directive('paths', [
 	    '$log',
+	    '$q',
 	    'leafletData',
 	    'leafletMapDefaults',
 	    'leafletHelpers',
 	    'leafletPathsHelpers',
 	    'leafletEvents',
-	    function ($log, leafletData, leafletMapDefaults, leafletHelpers, leafletPathsHelpers, leafletEvents) {
+	    function ($log, $q, leafletData, leafletMapDefaults, leafletHelpers, leafletPathsHelpers, leafletEvents) {
 	      return {
 	        restrict: 'A',
 	        scope: false,
 	        replace: false,
-	        require: 'leaflet',
+	        require: [
+	          'leaflet',
+	          '?layers'
+	        ],
 	        link: function (scope, element, attrs, controller) {
-	          var isDefined = leafletHelpers.isDefined, leafletScope = controller.getLeafletScope(), paths = leafletScope.paths, createPath = leafletPathsHelpers.createPath, bindPathEvents = leafletEvents.bindPathEvents, setPathOptions = leafletPathsHelpers.setPathOptions;
-	          controller.getMap().then(function (map) {
-	            var defaults = leafletMapDefaults.getDefaults(attrs.id);
+	          var mapController = controller[0], isDefined = leafletHelpers.isDefined, isString = leafletHelpers.isString, leafletScope = mapController.getLeafletScope(), paths = leafletScope.paths, createPath = leafletPathsHelpers.createPath, bindPathEvents = leafletEvents.bindPathEvents, setPathOptions = leafletPathsHelpers.setPathOptions;
+	          mapController.getMap().then(function (map) {
+	            var defaults = leafletMapDefaults.getDefaults(attrs.id), getLayers;
+	            // If the layers attribute is used, we must wait until the layers are created
+	            if (isDefined(controller[1])) {
+	              getLayers = controller[1].getLayers;
+	            } else {
+	              getLayers = function () {
+	                var deferred = $q.defer();
+	                deferred.resolve();
+	                return deferred.promise;
+	              };
+	            }
 	            if (!isDefined(paths)) {
 	              return;
 	            }
-	            var leafletPaths = {};
-	            leafletData.setPaths(leafletPaths, attrs.id);
-	            // Function for listening every single path once created
-	            var watchPathFn = function (leafletPath, name) {
-	              var clearWatch = leafletScope.$watch('paths.' + name, function (pathData) {
-	                  if (!isDefined(pathData)) {
-	                    map.removeLayer(leafletPath);
-	                    clearWatch();
-	                    return;
+	            getLayers().then(function (layers) {
+	              var leafletPaths = {};
+	              leafletData.setPaths(leafletPaths, attrs.id);
+	              // Function for listening every single path once created
+	              var watchPathFn = function (leafletPath, name) {
+	                var clearWatch = leafletScope.$watch('paths.' + name, function (pathData) {
+	                    if (!isDefined(pathData)) {
+	                      map.removeLayer(leafletPath);
+	                      clearWatch();
+	                      return;
+	                    }
+	                    setPathOptions(leafletPath, pathData.type, pathData);
+	                  }, true);
+	              };
+	              leafletScope.$watch('paths', function (newPaths) {
+	                // Create the new paths
+	                for (var newName in newPaths) {
+	                  if (newName.search('\\$') === 0) {
+	                    continue;
 	                  }
-	                  setPathOptions(leafletPath, pathData.type, pathData);
-	                }, true);
-	            };
-	            leafletScope.$watch('paths', function (newPaths) {
-	              // Create the new paths
-	              for (var newName in newPaths) {
-	                if (newName.search('-') !== -1) {
-	                  $log.error('[AngularJS - Leaflet] The path name "' + newName + '" is not valid. It must not include "-" and a number.');
-	                  continue;
+	                  if (newName.search('-') !== -1) {
+	                    $log.error('[AngularJS - Leaflet] The path name "' + newName + '" is not valid. It must not include "-" and a number.');
+	                    continue;
+	                  }
+	                  if (!isDefined(leafletPaths[newName])) {
+	                    var pathData = newPaths[newName];
+	                    var newPath = createPath(newName, newPaths[newName], defaults);
+	                    // bind popup if defined
+	                    if (isDefined(newPath) && isDefined(pathData.message)) {
+	                      newPath.bindPopup(pathData.message);
+	                    }
+	                    // Show label if defined
+	                    if (leafletHelpers.LabelPlugin.isLoaded() && isDefined(pathData.label) && isDefined(pathData.label.message)) {
+	                      newPath.bindLabel(pathData.label.message, pathData.label.options);
+	                    }
+	                    // Check if the marker should be added to a layer
+	                    if (isDefined(pathData) && isDefined(pathData.layer)) {
+	                      if (!isString(pathData.layer)) {
+	                        $log.error('[AngularJS - Leaflet] A layername must be a string');
+	                        continue;
+	                      }
+	                      if (!isDefined(layers)) {
+	                        $log.error('[AngularJS - Leaflet] You must add layers to the directive if the markers are going to use this functionality.');
+	                        continue;
+	                      }
+	                      if (!isDefined(layers.overlays) || !isDefined(layers.overlays[pathData.layer])) {
+	                        $log.error('[AngularJS - Leaflet] A marker can only be added to a layer of type "group"');
+	                        continue;
+	                      }
+	                      var layerGroup = layers.overlays[pathData.layer];
+	                      if (!(layerGroup instanceof L.LayerGroup || layerGroup instanceof L.FeatureGroup)) {
+	                        $log.error('[AngularJS - Leaflet] Adding a marker to an overlay needs a overlay of the type "group" or "featureGroup"');
+	                        continue;
+	                      }
+	                      // Listen for changes on the new path
+	                      leafletPaths[newName] = newPath;
+	                      // The path goes to a correct layer group, so first of all we add it
+	                      layerGroup.addLayer(newPath);
+	                      watchPathFn(newPath, newName);
+	                    } else if (isDefined(newPath)) {
+	                      // Listen for changes on the new path
+	                      leafletPaths[newName] = newPath;
+	                      map.addLayer(newPath);
+	                      watchPathFn(newPath, newName);
+	                    }
+	                    bindPathEvents(newPath, newName, pathData, leafletScope);
+	                  }
 	                }
-	                if (!isDefined(leafletPaths[newName])) {
-	                  var pathData = newPaths[newName];
-	                  var newPath = createPath(newName, newPaths[newName], defaults);
-	                  // bind popup if defined
-	                  if (isDefined(newPath) && isDefined(pathData.message)) {
-	                    newPath.bindPopup(pathData.message);
+	                // Delete paths (by name) from the array
+	                for (var name in leafletPaths) {
+	                  if (!isDefined(newPaths[name])) {
+	                    delete leafletPaths[name];
 	                  }
-	                  // Show label if defined
-	                  if (leafletHelpers.LabelPlugin.isLoaded() && isDefined(pathData.label) && isDefined(pathData.label.message)) {
-	                    newPath.bindLabel(pathData.label.message, pathData.label.options);
-	                  }
-	                  // Listen for changes on the new path
-	                  if (isDefined(newPath)) {
-	                    leafletPaths[newName] = newPath;
-	                    map.addLayer(newPath);
-	                    watchPathFn(newPath, newName);
-	                  }
-	                  bindPathEvents(newPath, newName, pathData, leafletScope);
 	                }
-	              }
-	              // Delete paths (by name) from the array
-	              for (var name in leafletPaths) {
-	                if (!isDefined(newPaths[name])) {
-	                  delete leafletPaths[name];
-	                }
-	              }
+	              });
 	            }, true);
 	          });
 	        }
@@ -1100,6 +1157,58 @@
 	      };
 	    }
 	  ]);
+	  angular.module('leaflet-directive').directive('decorations', [
+	    '$log',
+	    'leafletHelpers',
+	    function ($log, leafletHelpers) {
+	      return {
+	        restrict: 'A',
+	        scope: false,
+	        replace: false,
+	        require: 'leaflet',
+	        link: function (scope, element, attrs, controller) {
+	          var leafletScope = controller.getLeafletScope(), PolylineDecoratorPlugin = leafletHelpers.PolylineDecoratorPlugin, isDefined = leafletHelpers.isDefined, leafletDecorations = {};
+	          /* Creates an "empty" decoration with a set of coordinates, but no pattern. */
+	          function createDecoration(options) {
+	            if (isDefined(options) && isDefined(options.coordinates)) {
+	              if (!PolylineDecoratorPlugin.isLoaded()) {
+	                $log.error('[AngularJS - Leaflet] The PolylineDecorator Plugin is not loaded.');
+	              }
+	            }
+	            return L.polylineDecorator(options.coordinates);
+	          }
+	          /* Updates the path and the patterns for the provided decoration, and returns the decoration. */
+	          function setDecorationOptions(decoration, options) {
+	            if (isDefined(decoration) && isDefined(options)) {
+	              if (isDefined(options.coordinates) && isDefined(options.patterns)) {
+	                decoration.setPaths(options.coordinates);
+	                decoration.setPatterns(options.patterns);
+	                return decoration;
+	              }
+	            }
+	          }
+	          controller.getMap().then(function (map) {
+	            leafletScope.$watch('decorations', function (newDecorations) {
+	              for (var name in leafletDecorations) {
+	                if (!isDefined(newDecorations) || !isDefined(newDecorations[name])) {
+	                  delete leafletDecorations[name];
+	                }
+	                map.removeLayer(leafletDecorations[name]);
+	              }
+	              for (var newName in newDecorations) {
+	                var decorationData = newDecorations[newName], newDecoration = createDecoration(decorationData);
+	                if (isDefined(newDecoration)) {
+	                  leafletDecorations[newName] = newDecoration;
+	                  map.addLayer(newDecoration);
+	                  setDecorationOptions(newDecoration, decorationData);
+	                }
+	              }
+	            }, true);
+	          });
+	        }
+	      };
+	    }
+	  ]);
 	  angular.module('leaflet-directive').service('leafletData', [
 	    '$log',
 	    '$q',
@@ -1112,6 +1221,7 @@
 	      var paths = {};
 	      var markers = {};
 	      var geoJSON = {};
+	      var decorations = {};
 	      this.setMap = function (leafletMap, scopeId) {
 	        var defer = getUnresolvedDefer(maps, scopeId);
 	        defer.resolve(leafletMap);
@@ -1170,6 +1280,15 @@
 	        var defer = getDefer(geoJSON, scopeId);
 	        return defer.promise;
 	      };
+	      this.setDecorations = function (leafletDecorations, scopeId) {
+	        var defer = getUnresolvedDefer(decorations, scopeId);
+	        defer.resolve(leafletDecorations);
+	        setResolvedDefer(decorations, scopeId);
+	      };
+	      this.getDecorations = function (scopeId) {
+	        var defer = getDefer(decorations, scopeId);
+	        return defer.promise;
+	      };
 	    }
 	  ]);
 	  angular.module('leaflet-directive').factory('leafletMapDefaults', [
@@ -1195,7 +1314,7 @@
 	            }
 	          },
 	          crs: L.CRS.EPSG3857,
-	          tileLayer: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+	          tileLayer: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 	          tileLayerOptions: { attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' },
 	          path: {
 	            weight: 10,
@@ -1209,7 +1328,7 @@
 	          }
 	        };
 	      }
-	      var isDefined = leafletHelpers.isDefined, obtainEffectiveMapId = leafletHelpers.obtainEffectiveMapId, defaults = {};
+	      var isDefined = leafletHelpers.isDefined, isObject = leafletHelpers.isObject, obtainEffectiveMapId = leafletHelpers.obtainEffectiveMapId, defaults = {};
 	      // Get the _defaults dictionary, and override the properties defined by the user
 	      return {
 	        getDefaults: function (scopeId) {
@@ -1242,6 +1361,11 @@
 	          if (isDefined(d.markerZoomAnimation)) {
 	            mapDefaults.markerZoomAnimation = d.markerZoomAnimation;
 	          }
+	          if (d.map) {
+	            for (var option in d.map) {
+	              mapDefaults[option] = d.map[option];
+	            }
+	          }
 	          return mapDefaults;
 	        },
 	        setDefaults: function (userDefaults, scopeId) {
@@ -1259,7 +1383,9 @@
 	            if (isDefined(userDefaults.controls)) {
 	              angular.extend(newDefaults.controls, userDefaults.controls);
 	            }
-	            if (isDefined(userDefaults.crs) && isDefined(L.CRS[userDefaults.crs])) {
+	            if (isObject(userDefaults.crs)) {
+	              newDefaults.crs = userDefaults.crs;
+	            } else if (isDefined(L.CRS[userDefaults.crs])) {
 	              newDefaults.crs = L.CRS[userDefaults.crs];
 	            }
 	            if (isDefined(userDefaults.tileLayerOptions)) {
@@ -1282,6 +1408,9 @@
 	            }
 	            if (isDefined(userDefaults.worldCopyJump)) {
 	              newDefaults.worldCopyJump = userDefaults.worldCopyJump;
+	            }
+	            if (isDefined(userDefaults.map)) {
+	              newDefaults.map = userDefaults.map;
 	            }
 	          }
 	          var mapId = obtainEffectiveMapId(defaults, scopeId);
@@ -1484,6 +1613,20 @@
 	        },
 	        getAvailableMarkerEvents: _getAvailableMarkerEvents,
 	        getAvailablePathEvents: _getAvailablePathEvents,
+	        notifyCenterChangedToBounds: function (scope) {
+	          scope.$broadcast('boundsChanged');
+	        },
+	        notifyCenterUrlHashChanged: function (scope, map, attrs, search) {
+	          if (!isDefined(attrs.urlHashCenter)) {
+	            return;
+	          }
+	          var center = map.getCenter();
+	          var centerUrlHash = center.lat.toFixed(4) + ':' + center.lng.toFixed(4) + ':' + map.getZoom();
+	          if (!isDefined(search.c) || search.c !== centerUrlHash) {
+	            //$log.debug("notified new center...");
+	            scope.$emit('centerUrlHash', centerUrlHash);
+	          }
+	        },
 	        bindMarkerEvents: function (marker, name, markerData, leafletScope) {
 	          var markerEvents = [];
 	          var i;
@@ -1613,7 +1756,7 @@
 	              }
 	              // Enable / Disable
 	              var pathEventsEnable = false, pathEventsDisable = false;
-	              if (leafletScope.eventBroadcast.pats.enable !== undefined && leafletScope.eventBroadcast.path.enable !== null) {
+	              if (leafletScope.eventBroadcast.path.enable !== undefined && leafletScope.eventBroadcast.path.enable !== null) {
 	                if (typeof leafletScope.eventBroadcast.path.enable === 'object') {
 	                  pathEventsEnable = true;
 	                }
@@ -1733,6 +1876,12 @@
 	              return L.layerGroup();
 	            }
 	          },
+	          featureGroup: {
+	            mustHaveUrl: false,
+	            createLayer: function () {
+	              return L.featureGroup();
+	            }
+	          },
 	          google: {
 	            mustHaveUrl: false,
 	            createLayer: function (params) {
@@ -1799,6 +1948,20 @@
 	              return new L.BingLayer(params.key, params.options);
 	            }
 	          },
+	          heatmap: {
+	            mustHaveUrl: false,
+	            mustHaveData: true,
+	            createLayer: function (params) {
+	              if (!Helpers.HeatMapLayerPlugin.isLoaded()) {
+	                return;
+	              }
+	              var layer = new L.TileLayer.WebGLHeatMap(params.options);
+	              if (isDefined(params.data)) {
+	                layer.setData(params.data);
+	              }
+	              return layer;
+	            }
+	          },
 	          yandex: {
 	            mustHaveUrl: false,
 	            createLayer: function (params) {
@@ -1829,6 +1992,10 @@
 	        // Check if the layer must have an URL
 	        if (layerTypes[layerDefinition.type].mustHaveUrl && !isString(layerDefinition.url)) {
 	          $log.error('[AngularJS - Leaflet] A base layer must have an url');
+	          return false;
+	        }
+	        if (layerTypes[layerDefinition.type].mustHaveData && !isDefined(layerDefinition.data)) {
+	          $log.error('[AngularJS - Leaflet] The base layer must have a "data" array attribute');
 	          return false;
 	        }
 	        if (layerTypes[layerDefinition.type].mustHaveLayer && !isDefined(layerDefinition.layer)) {
@@ -1863,6 +2030,7 @@
 	          }
 	          var params = {
 	              url: layerDefinition.url,
+	              data: layerDefinition.data,
 	              options: layerDefinition.layerOptions,
 	              layer: layerDefinition.layer,
 	              type: layerDefinition.layerType,
@@ -2001,6 +2169,23 @@
 	    'leafletHelpers',
 	    function ($rootScope, $log, leafletHelpers) {
 	      var isDefined = leafletHelpers.isDefined, isArray = leafletHelpers.isArray, isNumber = leafletHelpers.isNumber, isValidPoint = leafletHelpers.isValidPoint;
+	      var availableOptions = [
+	          'stroke',
+	          'weight',
+	          'color',
+	          'opacity',
+	          'fill',
+	          'fillColor',
+	          'fillOpacity',
+	          'dashArray',
+	          'lineCap',
+	          'lineJoin',
+	          'clickable',
+	          'pointerEvents',
+	          'className',
+	          'smoothFactor',
+	          'noClip'
+	        ];
 	      function _convertToLeafletLatLngs(latlngs) {
 	        return latlngs.filter(function (latlng) {
 	          return isValidPoint(latlng);
@@ -2017,23 +2202,6 @@
 	        });
 	      }
 	      function _getOptions(path, defaults) {
-	        var availableOptions = [
-	            'stroke',
-	            'weight',
-	            'color',
-	            'opacity',
-	            'fill',
-	            'fillColor',
-	            'fillOpacity',
-	            'dashArray',
-	            'lineCap',
-	            'lineJoin',
-	            'clickable',
-	            'pointerEvents',
-	            'className',
-	            'smoothFactor',
-	            'noClip'
-	          ];
 	        var options = {};
 	        for (var i = 0; i < availableOptions.length; i++) {
 	          var optionName = availableOptions[i];
@@ -2046,15 +2214,14 @@
 	        return options;
 	      }
 	      var _updatePathOptions = function (path, data) {
-	        if (isDefined(data.weight)) {
-	          path.setStyle({ weight: data.weight });
+	        var updatedStyle = {};
+	        for (var i = 0; i < availableOptions.length; i++) {
+	          var optionName = availableOptions[i];
+	          if (isDefined(data[optionName])) {
+	            updatedStyle[optionName] = data[optionName];
+	          }
 	        }
-	        if (isDefined(data.color)) {
-	          path.setStyle({ color: data.color });
-	        }
-	        if (isDefined(data.opacity)) {
-	          path.setStyle({ opacity: data.opacity });
-	        }
+	        path.setStyle(data);
 	      };
 	      var _isValidPolyline = function (latlngs) {
 	        if (!isArray(latlngs)) {
@@ -2086,7 +2253,7 @@
 	          multiPolyline: {
 	            isValid: function (pathData) {
 	              var latlngs = pathData.latlngs;
-	              if (!isArray(latlngs) || latlngs.length !== 2) {
+	              if (!isArray(latlngs)) {
 	                return false;
 	              }
 	              for (var i in latlngs) {
@@ -2132,7 +2299,7 @@
 	          multiPolygon: {
 	            isValid: function (pathData) {
 	              var latlngs = pathData.latlngs;
-	              if (!isArray(latlngs) || latlngs.length !== 2) {
+	              if (!isArray(latlngs)) {
 	                return false;
 	              }
 	              for (var i in latlngs) {
@@ -2312,13 +2479,19 @@
 	    'leafletHelpers',
 	    '$log',
 	    function ($rootScope, leafletHelpers, $log) {
-	      var isDefined = leafletHelpers.isDefined, MarkerClusterPlugin = leafletHelpers.MarkerClusterPlugin, AwesomeMarkersPlugin = leafletHelpers.AwesomeMarkersPlugin, safeApply = leafletHelpers.safeApply, Helpers = leafletHelpers, isString = leafletHelpers.isString, isNumber = leafletHelpers.isNumber, isObject = leafletHelpers.isObject, isDefinedAndNotNull = leafletHelpers.isDefinedAndNotNull, groups = {};
+	      var isDefined = leafletHelpers.isDefined, MarkerClusterPlugin = leafletHelpers.MarkerClusterPlugin, AwesomeMarkersPlugin = leafletHelpers.AwesomeMarkersPlugin, MakiMarkersPlugin = leafletHelpers.MakiMarkersPlugin, safeApply = leafletHelpers.safeApply, Helpers = leafletHelpers, isString = leafletHelpers.isString, isNumber = leafletHelpers.isNumber, isObject = leafletHelpers.isObject, groups = {};
 	      var createLeafletIcon = function (iconData) {
 	        if (isDefined(iconData) && isDefined(iconData.type) && iconData.type === 'awesomeMarker') {
 	          if (!AwesomeMarkersPlugin.isLoaded()) {
 	            $log.error('[AngularJS - Leaflet] The AwesomeMarkers Plugin is not loaded.');
 	          }
 	          return new L.AwesomeMarkers.icon(iconData);
+	        }
+	        if (isDefined(iconData) && isDefined(iconData.type) && iconData.type === 'makiMarker') {
+	          if (!MakiMarkersPlugin.isLoaded()) {
+	            $log.error('[AngularJS - Leaflet] The MakiMarkers Plugin is not loaded.');
+	          }
+	          return new L.MakiMarkers.icon(iconData);
 	        }
 	        if (isDefined(iconData) && isDefined(iconData.type) && iconData.type === 'div') {
 	          return new L.divIcon(iconData);
@@ -2343,7 +2516,7 @@
 	        // if there are overlays
 	        if (isDefined(layers) && isDefined(layers.overlays)) {
 	          for (var key in layers.overlays) {
-	            if (layers.overlays[key] instanceof L.LayerGroup) {
+	            if (layers.overlays[key] instanceof L.LayerGroup || layers.overlays[key] instanceof L.FeatureGroup) {
 	              if (layers.overlays[key].hasLayer(marker)) {
 	                layers.overlays[key].removeLayer(marker);
 	                return;
@@ -2378,6 +2551,12 @@
 	              zIndexOffset: isDefined(markerData.zIndexOffset) ? markerData.zIndexOffset : 0,
 	              iconAngle: isDefined(markerData.iconAngle) ? markerData.iconAngle : 0
 	            };
+	          // Add any other options not added above to markerOptions
+	          for (var markerDatum in markerData) {
+	            if (markerData.hasOwnProperty(markerDatum) && !markerOptions.hasOwnProperty(markerDatum)) {
+	              markerOptions[markerDatum] = markerData[markerDatum];
+	            }
+	          }
 	          return new L.marker(markerData, markerOptions);
 	        },
 	        addMarkerToGroup: function (marker, groupName, map) {
@@ -2456,8 +2635,8 @@
 	                }
 	                // Is a group layer?
 	                var layerGroup = layers.overlays[markerData.layer];
-	                if (!(layerGroup instanceof L.LayerGroup)) {
-	                  $log.error('[AngularJS - Leaflet] A marker can only be added to a layer of type "group"');
+	                if (!(layerGroup instanceof L.LayerGroup || layerGroup instanceof L.FeatureGroup)) {
+	                  $log.error('[AngularJS - Leaflet] A marker can only be added to a layer of type "group" or "featureGroup"');
 	                  return;
 	                }
 	                // The marker goes to a correct layer group, so first of all we add it
@@ -2469,7 +2648,7 @@
 	                }
 	              }
 	              // Update the draggable property
-	              if (markerData.draggable !== true && oldMarkerData.draggable === true && isDefinedAndNotNull(marker.dragging)) {
+	              if (markerData.draggable !== true && oldMarkerData.draggable === true && isDefined(marker.dragging)) {
 	                marker.dragging.disable();
 	              }
 	              if (markerData.draggable === true && oldMarkerData.draggable !== true) {
@@ -2637,6 +2816,12 @@
 	        return defer;
 	      }
 	      return {
+	        isEmpty: function (value) {
+	          return Object.keys(value).length === 0;
+	        },
+	        isUndefinedOrEmpty: function (value) {
+	          return angular.isUndefined(value) || value === null || Object.keys(value).length === 0;
+	        },
 	        isDefined: function (value) {
 	          return angular.isDefined(value) && value !== null;
 	        },
@@ -2721,6 +2906,58 @@
 	            }
 	          }
 	        },
+	        PolylineDecoratorPlugin: {
+	          isLoaded: function () {
+	            if (angular.isDefined(L.PolylineDecorator)) {
+	              return true;
+	            } else {
+	              return false;
+	            }
+	          },
+	          is: function (decoration) {
+	            if (this.isLoaded()) {
+	              return decoration instanceof L.PolylineDecorator;
+	            } else {
+	              return false;
+	            }
+	          },
+	          equal: function (decorationA, decorationB) {
+	            if (!this.isLoaded()) {
+	              return false;
+	            }
+	            if (this.is(decorationA)) {
+	              return angular.equals(decorationA, decorationB);
+	            } else {
+	              return false;
+	            }
+	          }
+	        },
+	        MakiMarkersPlugin: {
+	          isLoaded: function () {
+	            if (angular.isDefined(L.MakiMarkers) && angular.isDefined(L.MakiMarkers.Icon)) {
+	              return true;
+	            } else {
+	              return false;
+	            }
+	          },
+	          is: function (icon) {
+	            if (this.isLoaded()) {
+	              return icon instanceof L.MakiMarkers.Icon;
+	            } else {
+	              return false;
+	            }
+	          },
+	          equal: function (iconA, iconB) {
+	            if (!this.isLoaded()) {
+	              return false;
+	            }
+	            if (this.is(iconA)) {
+	              return angular.equals(iconA, iconB);
+	            } else {
+	              return false;
+	            }
+	          }
+	        },
 	        LabelPlugin: {
 	          isLoaded: function () {
 	            return angular.isDefined(L.Label);
@@ -2760,6 +2997,11 @@
 	        ChinaLayerPlugin: {
 	          isLoaded: function () {
 	            return angular.isDefined(L.tileLayer.chinaProvider);
+	          }
+	        },
+	        HeatMapLayerPlugin: {
+	          isLoaded: function () {
+	            return angular.isDefined(L.TileLayer.WebGLHeatMap);
 	          }
 	        },
 	        BingLayerPlugin: {
@@ -2873,13 +3115,13 @@
 	  , angularResource  = __webpack_require__(17)
 	  , angularRoute     = __webpack_require__(18)
 	  , angularTouch     = __webpack_require__(19)
-	  , directives       = __webpack_require__(3)
-	  , entryControllers = __webpack_require__(4)
-	  , filters          = __webpack_require__(5)
-	  , interpolate      = __webpack_require__(6)
-	  , mapControllers   = __webpack_require__(7)
-	  , mapServices      = __webpack_require__(8)
-	  , slideMenu        = __webpack_require__(23)
+	  , directives       = __webpack_require__(10)
+	  , entryControllers = __webpack_require__(11)
+	  , filters          = __webpack_require__(12)
+	  , interpolate      = __webpack_require__(13)
+	  , mapControllers   = __webpack_require__(14)
+	  , mapServices      = __webpack_require__(15)
+	  , slideMenu        = __webpack_require__(21)
 	  ;
 
 	var mapApp = angular.module('mapApp', [
@@ -2921,7 +3163,14 @@
 
 
 /***/ },
-/* 3 */
+/* 3 */,
+/* 4 */,
+/* 5 */,
+/* 6 */,
+/* 7 */,
+/* 8 */,
+/* 9 */,
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var directives = angular.module('directives', []);
@@ -2932,16 +3181,15 @@
 	    , templateUrl: '/templates/popup.html'
 	    , link: function(scope, element, attr) {
 	        console.log(attr);
-	        var loc_id = parseInt(attr.location, 10);
-	        scope.info = scope.locations[loc_id];
-	        $compile(element.contents())(scope);
+	        var unique_name = attr.uniqueName;
+	        $compile(element.contents())(scope.entries[attr.uniqueName]);
 	      }
 	  };
 	});
 
 
 /***/ },
-/* 4 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var carousel       = __webpack_require__(20)
@@ -2971,7 +3219,7 @@
 
 
 /***/ },
-/* 5 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var filters = angular.module('filters', []);
@@ -2984,7 +3232,7 @@
 
 
 /***/ },
-/* 6 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var interpolate = angular.module('interpolate', [], function($interpolateProvider) {
@@ -2994,14 +3242,14 @@
 
 
 /***/ },
-/* 7 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var bounceMarker     = __webpack_require__(21)
-	  , haversine        = __webpack_require__(25)
-	  , leaflet          = __webpack_require__(22)
+	var bounceMarker     = __webpack_require__(22)
+	  , haversine        = __webpack_require__(26)
+	  , leaflet          = __webpack_require__(23)
 	  //, leafletDirective = require('angular-leaflet-directive')
-	  , _                = __webpack_require__(24)
+	  , _                = __webpack_require__(27)
 	  ;
 
 	var mapControllers = angular.module('mapControllers', [
@@ -3013,7 +3261,7 @@
 	mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
 	    function($scope, Entries, leafletEvents) {
 	      L.Icon.Default.imagePath = '/images';
-	console.log(leafletEvents.getAvailableMapEvents());
+	      
 	      // Initialize popup template
 	      var template = _.template("<h2 class=\"heading <%= popup_class %>\"><%= name.en_us %></h2> <div class=\"body-content <%= popup_class %>\"><div class=\"body-text\"><p><%= short_description.en_us %></p><p id=\"distance\"><%= distance %> <%= unit %></p><a href=\"<%= hash %>/entry/<%= unique_name %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
 
@@ -3039,7 +3287,7 @@
 	          }
 
 	          // Initialize list of locations/events
-	        , entries: []
+	        , entries: {}
 
 	          // Initialize all icons
 	        , icons: {
@@ -3106,13 +3354,7 @@
 	        Entries.search({lat: lat, lng: lng}).$promise.then(function(entries) {
 	          entries.forEach(function(ent, index, array) {
 	            // Avoid adding the same location twice
-	            var duplicate = false;
-	            for (var i=0; i<$scope.entries.length; i++) {
-	              if ($scope.entries[i]._id === ent._id) {
-	                duplicate = true;
-	                break;
-	              }
-	            }
+	            var duplicate = $scope.entries.hasOwnProperty(ent.unique_name) ? true : false;
 	            if (!duplicate) {
 	              // Set all entry URLs to begin with '/#' if browser does not support HTML5 History API
 	              ent.hash = (window.history && window.history.pushState) ? '' : '/#';
@@ -3168,8 +3410,8 @@
 	              }
 
 	              console.log(ent);
-	              // Push location to array
-	              $scope.entries.push(ent);
+	              // Add entry to entries object
+	              $scope.entries[ent.unique_name] = ent;
 
 	              // Add marker to map
 	              $scope.markers[ent._id] = {
@@ -3235,7 +3477,7 @@
 
 
 /***/ },
-/* 8 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var mapServices = angular.module('mapServices', ['ngResource']);
@@ -3269,13 +3511,6 @@
 
 
 /***/ },
-/* 9 */,
-/* 10 */,
-/* 11 */,
-/* 12 */,
-/* 13 */,
-/* 14 */,
-/* 15 */,
 /* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -27413,7 +27648,371 @@
 /* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
-	__webpack_require__(22);
+	/******/ (function(modules) { // webpackBootstrap
+	/******/ 	
+	/******/ 	// The module cache
+	/******/ 	var installedModules = {};
+	/******/ 	
+	/******/ 	// The require function
+	/******/ 	function __webpack_require__(moduleId) {
+	/******/ 		// Check if module is in cache
+	/******/ 		if(installedModules[moduleId])
+	/******/ 			return installedModules[moduleId].exports;
+	/******/ 		
+	/******/ 		// Create a new module (and put it into the cache)
+	/******/ 		var module = installedModules[moduleId] = {
+	/******/ 			exports: {},
+	/******/ 			id: moduleId,
+	/******/ 			loaded: false
+	/******/ 		};
+	/******/ 		
+	/******/ 		// Execute the module function
+	/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+	/******/ 		
+	/******/ 		// Flag the module as loaded
+	/******/ 		module.loaded = true;
+	/******/ 		
+	/******/ 		// Return the exports of the module
+	/******/ 		return module.exports;
+	/******/ 	}
+	/******/ 	
+	/******/ 	
+	/******/ 	// expose the modules object (__webpack_modules__)
+	/******/ 	__webpack_require__.m = modules;
+	/******/ 	
+	/******/ 	// expose the module cache
+	/******/ 	__webpack_require__.c = installedModules;
+	/******/ 	
+	/******/ 	// __webpack_public_path__
+	/******/ 	__webpack_require__.p = "";
+	/******/ 	
+	/******/ 	
+	/******/ 	// Load entry module and return exports
+	/******/ 	return __webpack_require__(0);
+	/******/ })
+	/************************************************************************/
+	/******/ ([
+	/* 0 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		__webpack_require__(1);
+		module.exports = __webpack_require__(2);
+
+
+	/***/ },
+	/* 1 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		var slideMenu = angular.module('slideMenu', []);
+		
+		slideMenu.factory('asmService', ['$rootScope', function($rootScope) {
+		  return {
+		      // This object tracks the status of each window and whether or not
+		      // it must be the only active window at a given time 
+		      asmStates: {
+		          'slideLeft': {active: false, exclusive: false}
+		        , 'slideRight': {active: false, exclusive: false}
+		        , 'slideTop': {active: false, exclusive: false}
+		        , 'slideBottom': {active: false, exclusive: false}
+		        , 'pushLeft': {active: false, exclusive: true}
+		        , 'pushRight': {active: false, exclusive: true}
+		        , 'pushTop': {active: false, exclusive: true}
+		        , 'pushBottom': {active: false, exclusive: true}
+		      }
+		
+		      // This object tracks whether or not to push the asm-wrapper
+		    , asmPush: null
+		
+		      /** This function toggles one of the menus listed in asmStates from 
+		       *  active to inactive and vice-versa based on certain criteria.
+		       *  @param menuKey the menu to attempt to toggle
+		       */
+		    , toggle: function(menuKey) {
+		        if (this.asmStates.hasOwnProperty(menuKey)) {
+		          var menuValue = this.asmStates[menuKey];
+		          var canToggle = true;
+		          var key = null
+		          for (key in this.asmStates) {
+		            var value = this.asmStates[key];
+		            // Ensure that no other exclusive menus are active, and do not 
+		            // activate an exclusive menu if any other menu is active.
+		            //if (key === menuKey) {
+		            //  continue;
+		            //}
+		            if ((key !== menuKey) && (value.active && (value.exclusive || menuValue.exclusive))) {
+		              canToggle = false;
+		              break;
+		            }
+		          }
+		          if (canToggle) {
+		            this.asmStates[menuKey].active = !this.asmStates[menuKey].active;
+		            // Update asm-wrapper on whether it needs pushing aside
+		            console.log(menuKey.substring(4).toLowerCase());
+		            this.asmPush = (menuKey.substring(0, 4) === 'push' && this.asmStates[menuKey].active) 
+		              ? menuKey.substring(4).toLowerCase() : null;
+		            console.log(this.asmPush);
+		            console.log(menuKey + ' active: ' + this.asmStates[menuKey].active);
+		            // Emit event
+		            $rootScope.$emit('asmEvent', null);
+		          }
+		          else {
+		            console.log('Cannot toggle!');
+		          }
+		        } 
+		        else {
+		          console.log('Unknown menu!');
+		        }
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmSlideLeft', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-horizontal asm-left');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.slideLeft.active) {
+		            element.addClass('asm-left-open');
+		          }
+		          else {
+		            element.removeClass('asm-left-open');
+		          }
+		        });
+		      }
+		  }
+		}]);
+		
+		slideMenu.directive('asmPushLeft', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-horizontal asm-left');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.pushLeft.active) {
+		            element.addClass('asm-left-open');
+		          }
+		          else {
+		            element.removeClass('asm-left-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmSlideRight', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-horizontal asm-right');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.slideRight.active) {
+		            element.addClass('asm-right-open');
+		          }
+		          else {
+		            element.removeClass('asm-right-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmPushRight', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-horizontal asm-right');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.pushRight.active) {
+		            element.addClass('asm-right-open');
+		          }
+		          else {
+		            element.removeClass('asm-right-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmSlideTop', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-vertical asm-top');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.slideTop.active) {
+		            element.addClass('asm-top-open');
+		          }
+		          else {
+		            element.removeClass('asm-top-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmPushTop', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-vertical asm-top');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.pushTop.active) {
+		            element.addClass('asm-top-open');
+		          }
+		          else {
+		            element.removeClass('asm-top-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmSlideBottom', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-vertical asm-bottom');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.slideBottom.active) {
+		            element.addClass('asm-bottom-open');
+		          }
+		          else {
+		            element.removeClass('asm-bottom-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmPushBottom', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm asm-vertical asm-bottom');
+		        $rootScope.$on('asmEvent', function() {
+		          if (asmService.asmStates.pushBottom.active) {
+		            element.addClass('asm-bottom-open');
+		          }
+		          else {
+		            element.removeClass('asm-bottom-open');
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmWrapper', ['$rootScope', 'asmService', function($rootScope, asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , link: function(scope, element, attrs) {
+		        element.addClass('asm-wrapper asm-body-closed');
+		        $rootScope.$on('asmEvent', function() {
+		          console.log('Body Caught Event: ' + asmService.asmPush);
+		          switch(asmService.asmPush) {
+		            case 'left':
+		              element.removeClass('asm-body-closed');
+		              element.addClass('asm-body-push-left');
+		              break;
+		            case 'right':
+		              element.removeClass('asm-body-closed');
+		              element.addClass('asm-body-push-right');
+		              break;
+		            case 'top':
+		              element.removeClass('asm-body-closed');
+		              element.addClass('asm-body-push-top');
+		              break;
+		            case 'bottom':
+		              element.removeClass('asm-body-closed');
+		              element.addClass('asm-body-push-bottom');
+		              break;
+		            default:
+		              element.removeClass('asm-body-push-left asm-body-push-right asm-body-push-top asm-body-push-bottom');
+		              element.addClass('asm-body-closed');
+		              break;
+		          }
+		        });
+		      }
+		  };
+		}]);
+		
+		slideMenu.directive('asmControl', ['asmService', function(asmService) {
+		  return {
+		      restrict: 'AEC'
+		    , compile: function(element, attrs) {
+		        element[0].innerHTML = '<a href="#">' + element[0].innerHTML + '</a>';
+		        return {
+		            pre: function preLink(scope, iElement, iAttrs) {
+		            }
+		          , post: function postLink(scope, iElement, iAttrs) {
+		              iElement.find('a').on('click', function(ev) {
+		                ev.preventDefault();
+		                asmService.toggle(attrs.menu);
+		              });
+		            }
+		        };
+		      }
+		  };
+		}]);
+
+
+	/***/ },
+	/* 2 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		// style-loader: Adds some css to the DOM by adding a <style> tag
+		var dispose = __webpack_require__(4)
+			// The css code:
+			(__webpack_require__(3))
+		if(false) {
+			module.hot.accept();
+			module.hot.dispose(dispose);
+		}
+
+	/***/ },
+	/* 3 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		module.exports =
+			".asm-wrapper {\n  position: relative;\n  top: 0;\n  left: 0;\n  z-index: 10;\n}\n#asm-mask {\n  position: fixed;\n  top: 0;\n  left: 0;\n  z-index: 9998;\n  width: 100%;\n  height: 100%;\n  background: rgba(0,0,0,0.8);\n}\n.asm {\n  position: fixed;\n  z-index: 9999;\n  overflow: hidden;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-horizontal {\n  top: 0;\n  width: 300px;\n  height: 100%;\n}\n.asm-vertical {\n  left: 0;\n  width: 100%;\n  height: 100px;\n}\n.asm-body-closed {\n  left: 0;\n  top: 0;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-left {\n  left: -300px;\n}\n.asm-left-open {\n  left: 0;\n}\n.asm-body-push-left {\n  left: 300px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-right {\n  right: -300px;\n}\n.asm-right-open {\n  right: 0;\n}\n.asm-body-push-right {\n  left: -300px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-top {\n  top: -100px;\n}\n.asm-top-open {\n  top: 0;\n}\n.asm-body-push-top {\n  top: 100px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-bottom {\n  bottom: -100px;\n}\n.asm-bottom-open {\n  bottom: 0;\n}\n.asm-body-push-bottom {\n  top: -100px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n";
+
+	/***/ },
+	/* 4 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		/*
+			MIT License http://www.opensource.org/licenses/mit-license.php
+			Author Tobias Koppers @sokra
+		*/
+		module.exports = function addStyle(cssCode) {
+			if(true) {
+				if(typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
+			}
+			var styleElement = document.createElement("style");
+			styleElement.type = "text/css";
+			if (styleElement.styleSheet) {
+				styleElement.styleSheet.cssText = cssCode;
+			} else {
+				styleElement.appendChild(document.createTextNode(cssCode));
+			}
+			var head = document.getElementsByTagName("head")[0];
+			head.appendChild(styleElement);
+			return function() {
+				head.removeChild(styleElement);
+			};
+		}
+
+	/***/ }
+	/******/ ])
+	/*
+	//@ sourceMappingURL=angular-slide-menu.js.map
+	*/
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	__webpack_require__(23);
 	/**
 	 * Copyright (C) 2013 Maxime Hadjinlian <maxime.hadjinlian@gmail.com>
 	 * All Rights Reserved.
@@ -27606,7 +28205,7 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
@@ -36780,371 +37379,51 @@
 	}(window, document));
 
 /***/ },
-/* 23 */
+/* 24 */,
+/* 25 */,
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/******/ (function(modules) { // webpackBootstrap
-	/******/ 	
-	/******/ 	// The module cache
-	/******/ 	var installedModules = {};
-	/******/ 	
-	/******/ 	// The require function
-	/******/ 	function __webpack_require__(moduleId) {
-	/******/ 		// Check if module is in cache
-	/******/ 		if(installedModules[moduleId])
-	/******/ 			return installedModules[moduleId].exports;
-	/******/ 		
-	/******/ 		// Create a new module (and put it into the cache)
-	/******/ 		var module = installedModules[moduleId] = {
-	/******/ 			exports: {},
-	/******/ 			id: moduleId,
-	/******/ 			loaded: false
-	/******/ 		};
-	/******/ 		
-	/******/ 		// Execute the module function
-	/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-	/******/ 		
-	/******/ 		// Flag the module as loaded
-	/******/ 		module.loaded = true;
-	/******/ 		
-	/******/ 		// Return the exports of the module
-	/******/ 		return module.exports;
-	/******/ 	}
-	/******/ 	
-	/******/ 	
-	/******/ 	// expose the modules object (__webpack_modules__)
-	/******/ 	__webpack_require__.m = modules;
-	/******/ 	
-	/******/ 	// expose the module cache
-	/******/ 	__webpack_require__.c = installedModules;
-	/******/ 	
-	/******/ 	// __webpack_public_path__
-	/******/ 	__webpack_require__.p = "";
-	/******/ 	
-	/******/ 	
-	/******/ 	// Load entry module and return exports
-	/******/ 	return __webpack_require__(0);
-	/******/ })
-	/************************************************************************/
-	/******/ ([
-	/* 0 */
-	/***/ function(module, exports, __webpack_require__) {
+	// haversine
+	// By Nick Justice (niix)
+	// https://github.com/niix/haversine
 
-		__webpack_require__(1);
-		module.exports = __webpack_require__(2);
+	var haversine = (function() {
 
+	  // convert to radians
+	  var toRad = function(num) {
+	    return num * Math.PI / 180
+	  }
 
-	/***/ },
-	/* 1 */
-	/***/ function(module, exports, __webpack_require__) {
+	  return function haversine(start, end, options) {
+	    var miles = 3960
+	    var km    = 6371
+	    options   = options || {}
 
-		var slideMenu = angular.module('slideMenu', []);
-		
-		slideMenu.factory('asmService', ['$rootScope', function($rootScope) {
-		  return {
-		      // This object tracks the status of each window and whether or not
-		      // it must be the only active window at a given time 
-		      asmStates: {
-		          'slideLeft': {active: false, exclusive: false}
-		        , 'slideRight': {active: false, exclusive: false}
-		        , 'slideTop': {active: false, exclusive: false}
-		        , 'slideBottom': {active: false, exclusive: false}
-		        , 'pushLeft': {active: false, exclusive: true}
-		        , 'pushRight': {active: false, exclusive: true}
-		        , 'pushTop': {active: false, exclusive: true}
-		        , 'pushBottom': {active: false, exclusive: true}
-		      }
-		
-		      // This object tracks whether or not to push the asm-wrapper
-		    , asmPush: null
-		
-		      /** This function toggles one of the menus listed in asmStates from 
-		       *  active to inactive and vice-versa based on certain criteria.
-		       *  @param menuKey the menu to attempt to toggle
-		       */
-		    , toggle: function(menuKey) {
-		        if (this.asmStates.hasOwnProperty(menuKey)) {
-		          var menuValue = this.asmStates[menuKey];
-		          var canToggle = true;
-		          var key = null
-		          for (key in this.asmStates) {
-		            var value = this.asmStates[key];
-		            // Ensure that no other exclusive menus are active, and do not 
-		            // activate an exclusive menu if any other menu is active.
-		            //if (key === menuKey) {
-		            //  continue;
-		            //}
-		            if ((key !== menuKey) && (value.active && (value.exclusive || menuValue.exclusive))) {
-		              canToggle = false;
-		              break;
-		            }
-		          }
-		          if (canToggle) {
-		            this.asmStates[menuKey].active = !this.asmStates[menuKey].active;
-		            // Update asm-wrapper on whether it needs pushing aside
-		            console.log(menuKey.substring(4).toLowerCase());
-		            this.asmPush = (menuKey.substring(0, 4) === 'push' && this.asmStates[menuKey].active) 
-		              ? menuKey.substring(4).toLowerCase() : null;
-		            console.log(this.asmPush);
-		            console.log(menuKey + ' active: ' + this.asmStates[menuKey].active);
-		            // Emit event
-		            $rootScope.$emit('asmEvent', null);
-		          }
-		          else {
-		            console.log('Cannot toggle!');
-		          }
-		        } 
-		        else {
-		          console.log('Unknown menu!');
-		        }
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmSlideLeft', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-horizontal asm-left');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.slideLeft.active) {
-		            element.addClass('asm-left-open');
-		          }
-		          else {
-		            element.removeClass('asm-left-open');
-		          }
-		        });
-		      }
-		  }
-		}]);
-		
-		slideMenu.directive('asmPushLeft', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-horizontal asm-left');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.pushLeft.active) {
-		            element.addClass('asm-left-open');
-		          }
-		          else {
-		            element.removeClass('asm-left-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmSlideRight', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-horizontal asm-right');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.slideRight.active) {
-		            element.addClass('asm-right-open');
-		          }
-		          else {
-		            element.removeClass('asm-right-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmPushRight', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-horizontal asm-right');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.pushRight.active) {
-		            element.addClass('asm-right-open');
-		          }
-		          else {
-		            element.removeClass('asm-right-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmSlideTop', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-vertical asm-top');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.slideTop.active) {
-		            element.addClass('asm-top-open');
-		          }
-		          else {
-		            element.removeClass('asm-top-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmPushTop', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-vertical asm-top');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.pushTop.active) {
-		            element.addClass('asm-top-open');
-		          }
-		          else {
-		            element.removeClass('asm-top-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmSlideBottom', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-vertical asm-bottom');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.slideBottom.active) {
-		            element.addClass('asm-bottom-open');
-		          }
-		          else {
-		            element.removeClass('asm-bottom-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmPushBottom', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm asm-vertical asm-bottom');
-		        $rootScope.$on('asmEvent', function() {
-		          if (asmService.asmStates.pushBottom.active) {
-		            element.addClass('asm-bottom-open');
-		          }
-		          else {
-		            element.removeClass('asm-bottom-open');
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmWrapper', ['$rootScope', 'asmService', function($rootScope, asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , link: function(scope, element, attrs) {
-		        element.addClass('asm-wrapper asm-body-closed');
-		        $rootScope.$on('asmEvent', function() {
-		          console.log('Body Caught Event: ' + asmService.asmPush);
-		          switch(asmService.asmPush) {
-		            case 'left':
-		              element.removeClass('asm-body-closed');
-		              element.addClass('asm-body-push-left');
-		              break;
-		            case 'right':
-		              element.removeClass('asm-body-closed');
-		              element.addClass('asm-body-push-right');
-		              break;
-		            case 'top':
-		              element.removeClass('asm-body-closed');
-		              element.addClass('asm-body-push-top');
-		              break;
-		            case 'bottom':
-		              element.removeClass('asm-body-closed');
-		              element.addClass('asm-body-push-bottom');
-		              break;
-		            default:
-		              element.removeClass('asm-body-push-left asm-body-push-right asm-body-push-top asm-body-push-bottom');
-		              element.addClass('asm-body-closed');
-		              break;
-		          }
-		        });
-		      }
-		  };
-		}]);
-		
-		slideMenu.directive('asmControl', ['asmService', function(asmService) {
-		  return {
-		      restrict: 'AEC'
-		    , compile: function(element, attrs) {
-		        element[0].innerHTML = '<a href="#">' + element[0].innerHTML + '</a>';
-		        return {
-		            pre: function preLink(scope, iElement, iAttrs) {
-		            }
-		          , post: function postLink(scope, iElement, iAttrs) {
-		              iElement.find('a').on('click', function(ev) {
-		                ev.preventDefault();
-		                asmService.toggle(attrs.menu);
-		              });
-		            }
-		        };
-		      }
-		  };
-		}]);
+	    var R = options.unit === 'km' ? km : miles
 
+	    var dLat = toRad(end.latitude - start.latitude)
+	    var dLon = toRad(end.longitude - start.longitude)
+	    var lat1 = toRad(start.latitude)
+	    var lat2 = toRad(end.latitude)
 
-	/***/ },
-	/* 2 */
-	/***/ function(module, exports, __webpack_require__) {
+	    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+	            Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2)
+	    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
 
-		// style-loader: Adds some css to the DOM by adding a <style> tag
-		var dispose = __webpack_require__(4)
-			// The css code:
-			(__webpack_require__(3))
-		if(false) {
-			module.hot.accept();
-			module.hot.dispose(dispose);
-		}
+	    if (options.threshold) {
+	      return options.threshold > (R * c)
+	    } else {
+	      return R * c
+	    }     
+	  }
 
-	/***/ },
-	/* 3 */
-	/***/ function(module, exports, __webpack_require__) {
+	})()
 
-		module.exports =
-			".asm-wrapper {\n  position: relative;\n  top: 0;\n  left: 0;\n  z-index: 10;\n}\n#asm-mask {\n  position: fixed;\n  top: 0;\n  left: 0;\n  z-index: 9998;\n  width: 100%;\n  height: 100%;\n  background: rgba(0,0,0,0.8);\n}\n.asm {\n  position: fixed;\n  z-index: 9999;\n  overflow: hidden;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-horizontal {\n  top: 0;\n  width: 300px;\n  height: 100%;\n}\n.asm-vertical {\n  left: 0;\n  width: 100%;\n  height: 100px;\n}\n.asm-body-closed {\n  left: 0;\n  top: 0;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-left {\n  left: -300px;\n}\n.asm-left-open {\n  left: 0;\n}\n.asm-body-push-left {\n  left: 300px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-right {\n  right: -300px;\n}\n.asm-right-open {\n  right: 0;\n}\n.asm-body-push-right {\n  left: -300px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-top {\n  top: -100px;\n}\n.asm-top-open {\n  top: 0;\n}\n.asm-body-push-top {\n  top: 100px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n.asm-bottom {\n  bottom: -100px;\n}\n.asm-bottom-open {\n  bottom: 0;\n}\n.asm-body-push-bottom {\n  top: -100px;\n  -webkit-transition: all 0.3s ease-in-out;\n  -moz-transition: all 0.3s ease-in-out;\n  -ms-transition: all 0.3s ease-in-out;\n  -o-transition: all 0.3s ease-in-out;\n  transition: all 0.3s ease-in-out;\n}\n";
-
-	/***/ },
-	/* 4 */
-	/***/ function(module, exports, __webpack_require__) {
-
-		/*
-			MIT License http://www.opensource.org/licenses/mit-license.php
-			Author Tobias Koppers @sokra
-		*/
-		module.exports = function addStyle(cssCode) {
-			if(true) {
-				if(typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
-			}
-			var styleElement = document.createElement("style");
-			styleElement.type = "text/css";
-			if (styleElement.styleSheet) {
-				styleElement.styleSheet.cssText = cssCode;
-			} else {
-				styleElement.appendChild(document.createTextNode(cssCode));
-			}
-			var head = document.getElementsByTagName("head")[0];
-			head.appendChild(styleElement);
-			return function() {
-				head.removeChild(styleElement);
-			};
-		}
-
-	/***/ }
-	/******/ ])
-	/*
-	//@ sourceMappingURL=angular-slide-menu.js.map
-	*/
+	module.exports = haversine
 
 /***/ },
-/* 24 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.6.0
@@ -38491,48 +38770,6 @@
 	  }
 	}).call(this);
 
-
-/***/ },
-/* 25 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// haversine
-	// By Nick Justice (niix)
-	// https://github.com/niix/haversine
-
-	var haversine = (function() {
-
-	  // convert to radians
-	  var toRad = function(num) {
-	    return num * Math.PI / 180
-	  }
-
-	  return function haversine(start, end, options) {
-	    var miles = 3960
-	    var km    = 6371
-	    options   = options || {}
-
-	    var R = options.unit === 'km' ? km : miles
-
-	    var dLat = toRad(end.latitude - start.latitude)
-	    var dLon = toRad(end.longitude - start.longitude)
-	    var lat1 = toRad(start.latitude)
-	    var lat2 = toRad(end.latitude)
-
-	    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-	            Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2)
-	    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-
-	    if (options.threshold) {
-	      return options.threshold > (R * c)
-	    } else {
-	      return R * c
-	    }     
-	  }
-
-	})()
-
-	module.exports = haversine
 
 /***/ }
 /******/ ])

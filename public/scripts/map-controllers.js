@@ -1,20 +1,18 @@
 var bounceMarker     = require('./bouncemarker')
   , haversine        = require('haversine')
   , leaflet          = require('leaflet')
-  //, leafletDirective = require('angular-leaflet-directive')
   , _                = require('underscore')
   ;
 
 var mapControllers = angular.module('mapControllers', [
-  /*  'directives'
-  , */'leaflet-directive'
+    'leaflet-directive'
   , 'mapServices'
 ]);
 
 mapControllers.controller('MapCtrl', ['$scope', 'Entries', 'leafletEvents',
     function($scope, Entries, leafletEvents) {
       L.Icon.Default.imagePath = '/images';
-console.log(leafletEvents.getAvailableMapEvents());
+      
       // Initialize popup template
       var template = _.template("<h2 class=\"heading <%= popup_class %>\"><%= name.en_us %></h2> <div class=\"body-content <%= popup_class %>\"><div class=\"body-text\"><p><%= short_description.en_us %></p><p id=\"distance\"><%= distance %> <%= unit %></p><a href=\"<%= hash %>/entry/<%= unique_name %>\">More info</a></div> <img class=\"popup-image\" src=\"<%= thumbnails[0] %>\" alt=\"<%= caption %>\"></div>");
 
@@ -40,7 +38,7 @@ console.log(leafletEvents.getAvailableMapEvents());
           }
 
           // Initialize list of locations/events
-        , entries: []
+        , entries: {}
 
           // Initialize all icons
         , icons: {
@@ -107,13 +105,7 @@ console.log(leafletEvents.getAvailableMapEvents());
         Entries.search({lat: lat, lng: lng}).$promise.then(function(entries) {
           entries.forEach(function(ent, index, array) {
             // Avoid adding the same location twice
-            var duplicate = false;
-            for (var i=0; i<$scope.entries.length; i++) {
-              if ($scope.entries[i]._id === ent._id) {
-                duplicate = true;
-                break;
-              }
-            }
+            var duplicate = $scope.entries.hasOwnProperty(ent.unique_name) ? true : false;
             if (!duplicate) {
               // Set all entry URLs to begin with '/#' if browser does not support HTML5 History API
               ent.hash = (window.history && window.history.pushState) ? '' : '/#';
@@ -169,8 +161,8 @@ console.log(leafletEvents.getAvailableMapEvents());
               }
 
               console.log(ent);
-              // Push location to array
-              $scope.entries.push(ent);
+              // Add entry to entries object
+              $scope.entries[ent.unique_name] = ent;
 
               // Add marker to map
               $scope.markers[ent._id] = {
